@@ -1,0 +1,23 @@
+{
+  "name": "@joostlubach/mongoid",
+  "version": "1.0.0",
+  "description": "Simple MongoDB ORM",
+  "main": "index.js",
+  "author": "Joost Lubach",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "lodash": "^4.17.11",
+    "mongodb": "^2.2.31"
+  },
+  "devDependencies": {
+    "@types/inflected": "^1.1.29",
+    "@types/lodash": "^4.14.118",
+    "@types/mongodb": "^3.0.18",
+    "tslint": "^5.11.0",
+    "typescript": "^3.2.1"
+  },
+  "scripts": {
+    "build": "tsc -p ."
+  }
+}
