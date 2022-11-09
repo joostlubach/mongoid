@@ -1,0 +1,16 @@
+{
+  "name": "mongoid",
+  "version": "1.0.0",
+  "description": "Simple MongoDB ORM",
+  "main": "index.ts",
+  "author": "Joost Lubach",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "inflected": "^2.0.4",
+    "mongodb": "^3.6.10"
+  },
+  "devDependencies": {
+    "@types/inflected": "^1.1.29"
+  }
+}
