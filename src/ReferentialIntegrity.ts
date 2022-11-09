@@ -1,13 +1,11 @@
 import chalk from 'chalk'
 import { isArray, some, uniq } from 'lodash'
 import { flatMap, MapBuilder, modifyInObject, splitArray } from 'ytil'
-import { createComponentLogger } from '@@logger'
+import config from './config'
 import Model from './Model'
 import models from './models'
 import { isCustomStrategy, isSetStrategy, Ref, RefDeleteStrategy, RefOptions } from './types/ref'
 import { ID, ModelClass } from './typings'
-
-const logger = createComponentLogger('RefInt')
 
 export default class ReferentialIntegrity {
 
@@ -244,9 +242,9 @@ export default class ReferentialIntegrity {
     const affectedModelDesc = (model: AffectedModel) => `${model.Model.name} ${model.id}`
 
     if (affected.length === 0) {
-      logger.debug(chalk`Deleting {red ${modelDesc}}`)
+      config.logger.debug(chalk`RefInt - Deleting {red ${modelDesc}}`)
     } else {
-      logger.debug(chalk`Deleting {red ${modelDesc}} {dim (${affected.map(affectedModelDesc).join(', ')})}`)
+      config.logger.debug(chalk`RefInt - Deleting {red ${modelDesc}} {dim (${affected.map(affectedModelDesc).join(', ')})}`)
     }
   }
 
