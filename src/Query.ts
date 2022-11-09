@@ -255,7 +255,7 @@ export default class Query<M extends Model> {
    * Runs this query and returns a cursor returning model instances.
    */
   public run(options: RunOptions = {}): Cursor<M> {
-    return new Cursor(this.Model, this.raw(options))
+    return new Cursor(this, this.raw(options))
   }
 
   /**

@@ -1,16 +1,18 @@
-import Model from './Model'
-import { ModelClass } from './typings'
 import { FindCursor as MongoCursor } from 'mongodb'
+import Model from './Model'
+import Query from './Query'
 
 export default class Cursor<M extends Model> {
 
   constructor(
-    public readonly Model:  ModelClass<M>,
+    public readonly query:  Query<M>,
     public readonly cursor: MongoCursor
   ) {}
 
+  private Model = this.query.Model
+
   public async count(): Promise<number> {
-    return this.cursor.count()
+    return await this.query.count()
   }
 
   public forEach(iterator: (model: M) => void | Promise<void>): Promise<void> {
