@@ -11,6 +11,9 @@ export interface Config {
   /** Whether to manage timestamp fields `createdAt` and `updatedAt`. */
   timestamps: boolean
 
+  /** Whether ModelRetainer enables caching by default. Turn off for unit testing. */
+  cachingEnabled: boolean
+
   /** A logger to use. */
   logger: Logger
 
@@ -32,8 +35,9 @@ export interface Logger {
 }
 
 const config: Config = {
-  idGenerator: () => new ObjectId(),
-  timestamps:  true,
+  idGenerator:    () => new ObjectId(),
+  timestamps:     true,
+  cachingEnabled: true,
 
   logger: {
     debug: console.log,
