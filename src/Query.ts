@@ -180,7 +180,10 @@ export default class Query<M extends Model> {
   // Data retrieval
 
   public async count(options: CountOptions = {}): Promise<number> {
-    return await this.raw({label: 'CNT'}).count(options)
+    if (config.traceEnabled) {
+      this.trace('CNT')
+    }
+    return await this.collection.countDocuments(this.compoundFilters, options)
   }
 
   public async total(options: CountOptions = {}): Promise<number> {
@@ -300,25 +303,7 @@ export default class Query<M extends Model> {
     }
 
     if (trace) {
-      // Find out the origin.
-      const stackTarget = {} as {stack: string}
-      Error.captureStackTrace(stackTarget)
-
-      let source: string | null = null
-      for (const site of stackTarget.stack.split('\n').slice(1)) {
-        if (site.includes('mongoid')) { continue }
-        source = site.trim()
-        break
-      }
-
-      const parts = sparse([
-        chalk.magenta(label ?? 'QRY'),
-        chalk.bold(this.Model.name + (this.options.collection ? ` (${this.options.collection})` : '')),
-        chalk.blue(`[${this.skipCount ?? 0} - ${this.limitCount == null ? '∞' : (this.skipCount ?? 0) + this.limitCount}]`),
-        chalk.dim(JSON.stringify(this.filters)),
-        source != null ? chalk.dim.underline(source) : null,
-      ])
-      config.logger.debug(parts.join(' '))
+      this.trace(label)
     }
 
     return cursor
@@ -326,6 +311,28 @@ export default class Query<M extends Model> {
 
   public toRawArray() {
     return withClientStackTrace(() => this.raw().toArray())
+  }
+
+  private trace(label: string = 'QRY') {
+    // Find out the origin.
+    const stackTarget = {} as {stack: string}
+    Error.captureStackTrace(stackTarget)
+
+    let source: string | null = null
+    for (const site of stackTarget.stack.split('\n').slice(1)) {
+      if (site.includes('mongoid')) { continue }
+      source = site.trim()
+      break
+    }
+
+    const parts = sparse([
+      chalk.magenta(label),
+      chalk.bold(this.Model.name + (this.options.collection ? ` (${this.options.collection})` : '')),
+      chalk.blue(`[${this.skipCount ?? 0} - ${this.limitCount == null ? '∞' : (this.skipCount ?? 0) + this.limitCount}]`),
+      chalk.dim(JSON.stringify(this.filters)),
+      source != null ? chalk.dim.underline(source) : null,
+    ])
+    config.logger.debug(parts.join(' '))
   }
 
   //------
