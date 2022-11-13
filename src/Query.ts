@@ -118,6 +118,12 @@ export default class Query<M extends Model> {
     return copy
   }
 
+  public clearFilters() {
+    const copy = this.copy()
+    copy.filters = []
+    return copy
+  }
+
   public none() {
     const copy = this.copy()
     copy.filters = [{id: -1}]
