@@ -44,3 +44,7 @@ export function disconnect() {
   CLIENT.close()
   config.logger.debug(chalk.dim("Connection closed"))
 }
+
+export function connected() {
+  return CLIENT !== stub && DB !== stub
+}

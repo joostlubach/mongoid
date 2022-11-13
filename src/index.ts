@@ -1,4 +1,4 @@
-export { default, getClient, connect, disconnect } from './client'
+export { default, getClient, connect, connected, disconnect } from './client'
 export { default as config, Config, configure } from './config'
 export { default as models, register } from './models'
 export { hook, registerHook, getHooks, Hooks } from './hooks'

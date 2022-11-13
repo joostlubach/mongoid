@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { Logger } from 'winston'
 import { wrapInPromise } from 'ytil'
-import config from '~config'
+import config from '../config'
 import Model from '../Model'
 import Query from '../Query'
 import { isRef, Ref } from '../types/ref'
@@ -106,7 +106,7 @@ export default class ModelRetainer<M extends Model> {
     }
 
     // Fetch the model if it's not cached. When testing, never cache.
-    if (this.model == null || options.reload || !config.data.caching) {
+    if (this.model == null || options.reload || !config.cachingEnabled) {
       this.model = await this.fetch(options)
     }
 
