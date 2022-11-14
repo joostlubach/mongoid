@@ -22,9 +22,6 @@ export interface Config {
 
   /** If set to true, all MongoErrors will receive client stack traces. */
   clientStackTraces: boolean
-
-  /** Whether caching is enabled in ModelRetainer. */
-  cachingEnabled: boolean
 }
 
 export interface Logger {
@@ -48,7 +45,6 @@ const config: Config = {
 
   traceEnabled:      false,
   clientStackTraces: process.env.NODE_ENV !== 'production',
-  cachingEnabled:    true,
 }
 export default config
 
