@@ -11,6 +11,11 @@
     "mongodb": "^3.6.10"
   },
   "devDependencies": {
-    "@types/inflected": "^1.1.29"
+    "@types/inflected": "^1.1.29",
+    "jest": "^29.3.1",
+    "ts-jest": "^29.0.3"
+  },
+  "scripts": {
+    "test": "jest"
   }
 }
