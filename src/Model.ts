@@ -44,13 +44,8 @@ export default class Model {
   //------
   // Metadata
 
-  private static _meta: Metadata<any>
-
   public static get meta(): Metadata<any> {
-    if (this._meta == null) {
-      this._meta = new Metadata(this)
-    }
-    return this._meta
+    return new Metadata(this)
   }
 
   public static get collection(): Collection {
