@@ -10,13 +10,13 @@ import {
 } from 'mongodb'
 import { sparse } from 'ytil'
 import AggregationPipeline from './AggregationPipeline'
-import { withClientStackTrace } from './async'
 import { emitDelete } from './changes'
 import db from './client'
 import config from './config'
 import Cursor from './Cursor'
 import Model from './Model'
 import { ID, ModelClass } from './typings'
+import { withClientStackTrace } from './util'
 
 export type Filter = Record<string, any>
 

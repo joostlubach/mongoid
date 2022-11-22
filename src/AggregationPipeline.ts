@@ -2,10 +2,10 @@ import chalk from 'chalk'
 import { isFunction, omit, omitBy, pick } from 'lodash'
 import { AggregationCursor as MongoAggregationCursor, Collection } from 'mongodb'
 import AggregationCursor from './AggregationCursor'
-import { withClientStackTrace } from './async'
 import config from './config'
 import Model from './Model'
 import { ModelClass } from './typings'
+import { withClientStackTrace } from './util'
 
 export default class AggregationPipeline<M extends Model> {
 
@@ -120,19 +120,6 @@ export default class AggregationPipeline<M extends Model> {
       $unwind: {
         path,
         ...options,
-      },
-    })
-  }
-
-  /**
-   * Adds an `$replaceRoot` stage to the pipeline.
-   *
-   * @param path The path to replace the root with.
-   */
-   public replaceRoot(path: string) {
-    return this.addStage({
-      $replaceRoot: {
-        newRoot: path,
       },
     })
   }
@@ -367,13 +354,33 @@ export default class AggregationPipeline<M extends Model> {
     return withClientStackTrace(() => this.raw().toArray())
   }
 
+  //------
+  // Accumulators
+
+  public static buildAccumulator<S, U = S>(spec: AccumulatorSpec<S, U, any[], any[]>): Record<string, any>
+  public static buildAccumulator<S, I extends any[], A extends any[]>(spec: AccumulatorSpec<S, S, I, A>): Record<string, any>
+  public static buildAccumulator<S, U, I extends any[], A extends any[]>(spec: AccumulatorSpec<S, U, I, A>): Record<string, any>
+  public static buildAccumulator<S, U, I extends any[], A extends any[]>(spec: AccumulatorSpec<S, U, I, A>) {
+    return {
+      lang: 'js',
+
+      init:     spec.init.toString(),
+      initArgs: spec.initArgs,
+
+      accumulate:     spec.accumulate.toString(),
+      accumulateArgs: spec.accumulateArgs,
+
+      merge:     spec.merge.toString(),
+      finalize:  spec.finalize?.toString(),
+    }
+  }
+
 }
 
 export type Stage =
   | MatchStage
   | LookupStage
   | UnwindStage
-  | ReplaceRootState
   | ProjectStage
   | GroupStage
   | AddFieldsStage
@@ -418,12 +425,6 @@ export interface UnwindStage {
   }
 }
 
-export interface ReplaceRootState {
-  $replaceRoot: {
-    newRoot: string
-  }
-}
-
 export interface ProjectStage {
   $project: Record<string, any>
 }
@@ -459,3 +460,16 @@ export interface CountStage {
 export type OtherStage = Record<string, any>
 
 export type Expression = string | Record<string, any>
+
+export interface AccumulatorSpec<S, U = S, I extends any[] = [], A extends any[] = []> {
+  init:      (...args: I) => S
+  initArgs?: I
+
+  accumulate:     (state: S, ...args: A) => S
+  accumulateArgs: A
+
+  merge:     (state1: S, state2: S) => S
+  finalize?: (state: S) => U
+
+  lang?:      string
+}

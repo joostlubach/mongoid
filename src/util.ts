@@ -1,3 +1,4 @@
+import { isArray, isPlainObject } from 'lodash'
 import config from './config'
 
 export async function withClientStackTrace<T>(fn: () => PromiseLike<T> | T): Promise<T> {
@@ -17,3 +18,16 @@ export async function withClientStackTrace<T>(fn: () => PromiseLike<T> | T): Pro
   }
 }
 
+export function deepMapKeys(arg: any, fn: (key: string | symbol) => any): any {
+  if (isPlainObject(arg)) {
+    const result: Record<string, any> = {}
+    for (const [attribute, value] of Object.entries(arg)) {
+      result[fn(attribute)] = deepMapKeys(value, fn)
+    }
+    return result
+  } else if (isArray(arg)) {
+    return arg.map(it => deepMapKeys(it, fn))
+  } else {
+    return arg
+  }
+}

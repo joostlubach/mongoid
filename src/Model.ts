@@ -3,7 +3,6 @@ import { cloneDeep, isEqual, isFunction, isPlainObject, some } from 'lodash'
 import { Collection, DeleteResult, Document, UpdateResult } from 'mongodb'
 import Validator, { INVALID, ObjectSchema, ValidatorResult } from 'validator'
 import { deepMapKeys } from 'ytil'
-import { withClientStackTrace } from './async'
 import { emitCreate, emitDelete, emitUpdate } from './changes'
 import config from './config'
 import { callHook } from './hooks'
@@ -13,6 +12,7 @@ import Query, { QueryOptions } from './Query'
 import ReferentialIntegrity from './ReferentialIntegrity'
 import { isVirtual } from './types/virtual'
 import { ID, IDOf, ModelClass, SaveOptions, UniqueSpec } from './typings'
+import { withClientStackTrace } from './util'
 
 export default class Model {
 
