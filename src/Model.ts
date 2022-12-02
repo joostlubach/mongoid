@@ -10,6 +10,7 @@ import InvalidModelError from './InvalidModelError'
 import Metadata from './Metadata'
 import Query, { QueryOptions } from './Query'
 import ReferentialIntegrity from './ReferentialIntegrity'
+import { isRef, Ref } from './types/ref'
 import { isVirtual } from './types/virtual'
 import { ID, IDOf, ModelClass, SaveOptions, UniqueSpec } from './typings'
 import { withClientStackTrace } from './util'
@@ -539,6 +540,21 @@ export default class Model {
         .replace(/\\u002e/g, '.')
         .replace(/\\\\/g, '\\')
     })
+  }
+
+  //------
+  // Refs
+
+  public findRefs() {
+    const refs: Ref<any>[] = []
+
+    this.meta.modelType.traverse?.(this, [], value => {
+      if (isRef(value)) {
+        refs.push(value)
+      }
+    })
+
+    return refs
   }
 
   //------
