@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { isFunction, omit, omitBy, pick } from 'lodash'
+import { omit, omitBy, pick } from 'lodash'
 import { AggregationCursor as MongoAggregationCursor, Collection } from 'mongodb'
 import AggregationCursor from './AggregationCursor'
 import config from './config'
@@ -13,12 +13,12 @@ export default class AggregationPipeline<M extends Model> {
     public ModelOrCollection: ModelClass<M> | Collection,
     private stages: Stage[] = []
   ) {
-    if (isFunction(ModelOrCollection) && ModelOrCollection.prototype instanceof Model) {
-      this.Model      = ModelOrCollection as ModelClass<M>
-      this.collection = this.Model.collection
-    } else {
+    if (ModelOrCollection instanceof Collection) {
       this.Model      = null
       this.collection = ModelOrCollection as Collection
+    } else {
+      this.Model      = ModelOrCollection as ModelClass<M>
+      this.collection = this.Model.collection
     }
   }
 
@@ -351,7 +351,10 @@ export default class AggregationPipeline<M extends Model> {
   }
 
   public toRawArray(): Promise<AnyObject[]> {
-    return withClientStackTrace(() => this.raw().toArray())
+    return withClientStackTrace(() => {
+      const cursor = this.raw()
+      return cursor.toArray()
+    })
   }
 
   //------
