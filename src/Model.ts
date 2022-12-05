@@ -236,6 +236,10 @@ export default class Model {
     }
   }
 
+  public markClean() {
+    this.originals = cloneDeep(this.attributes as Partial<this>)
+  }
+
   public getDirtyAttributes() {
     return Object.keys(this.schema)
       .filter(attr => this.isDirty(attr as any)) as Array<string>
