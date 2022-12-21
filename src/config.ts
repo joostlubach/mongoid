@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-import { isFunction } from 'lodash'
+import { isFunction, merge } from 'lodash'
 import { ObjectId } from 'mongodb'
 import { IDGenerator } from './typings'
 
@@ -52,6 +52,6 @@ export function configure(cfg: Partial<Config> | ((config: Config) => void)) {
   if (isFunction(cfg)) {
     cfg(config)
   } else {
-    Object.assign(config, cfg)
+    merge(config, cfg)
   }
 }
