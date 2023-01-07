@@ -1,9 +1,9 @@
+import { INVALID, Type, TypeOptions, ValidatorResult } from 'validator'
+import { isID } from '../ID'
 import Model from '../Model'
 import models from '../models'
-import { RefModel, Ref, RefDeleteStrategy } from './ref'
 import { ID, IDOf } from '../typings'
-import { isID } from '../ID'
-import { ValidatorResult, Type, TypeOptions, INVALID } from 'validator'
+import { Ref, RefDeleteStrategy, RefModel } from './ref'
 
 export interface Options<PM extends Model = any> {
   models?:   string[]
@@ -51,7 +51,7 @@ function polymorphicRef<PM extends Model = any>(options: TypeOptions<Polymorphic
         : ref
     },
 
-    async validate(value: any, result: ValidatorResult<any>) {
+    validate(value: any, result: ValidatorResult<any>) {
       if (!(value instanceof PolymorphicRef)) {
         result.addError('invalid_type', 'Expected a polymorphic reference')
       }

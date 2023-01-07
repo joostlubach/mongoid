@@ -68,7 +68,7 @@ function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M
       return ref instanceof Ref ? ref.id : ref
     },
 
-    async validate(value: any, result: ValidatorResult<any>) {
+    validate(value: any, result: ValidatorResult<any>) {
       if (value instanceof Ref) { return }
       if (isID(value)) { return }
 

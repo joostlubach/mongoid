@@ -120,7 +120,7 @@ export default class Model {
    * in the {@link #assign} function.
    */
   public coerce(raw: AnyObject, partial: boolean): AnyObject {
-    const validator = Validator.create(this)
+    const validator = new Validator()
 
     // For polymorphic models, the type property is important in determining the correct schema. If this
     // changes, we need to take special action.
@@ -577,7 +577,7 @@ export default class Model {
       this.recoerce()
     }
 
-    const validator = Validator.create(this)
+    const validator = new Validator()
     const result = await validator.validate(
       this.attributes,
       this.meta.modelType,
