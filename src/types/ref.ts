@@ -11,6 +11,11 @@ import type { Reference } from '../ReferentialIntegrity'
 export interface Options<PM extends Model = any> {
   model:       string
   foreignKey?: string
+  onDelete:    RefDeleteStrategy<PM>
+}
+
+export interface RefOptions<PM extends Model = any> {
+  foreignKey?: string
   onDelete?:   RefDeleteStrategy<PM>
 }
 
@@ -37,8 +42,6 @@ export type RefDeleteStrategy<PM extends Model> =
 
 export type CustomDeleteStrategy<PM extends Model> = ((model: PM, reference: Reference) => boolean | Promise<boolean>)
 
-export type RefOptions<PM extends Model = any> = Omit<Options<PM>, 'model'>
-
 function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M>> & Options<PM> & {required: false}): Type<Ref<M>> & {options: {required: false}}
 function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M>> & Options<PM> & {required?: true}): Type<Ref<M>> & {options: {required: true}}
 function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M>> & Options<PM>): Type<Ref<M>> {
@@ -55,10 +58,14 @@ function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M
       if (value instanceof Ref) { return value }
 
       const foreignKey = options.foreignKey || 'id'
+
+      const opts: Options<PM> = options
+      const refOptions: Omit<Options<PM>, 'model'> = omit(opts, 'model')
+
       if (isID(value)) {
-        return new Ref(model, value as IDOf<M>, omit(options, 'model'))
+        return new Ref<M>(model, value, refOptions)
       } else if (typeof value === 'object' && value != null && isID(value[foreignKey])) {
-        return new Ref(model, value[foreignKey], omit(options, 'model'))
+        return new Ref<M>(model, value[foreignKey], refOptions)
       } else {
         return INVALID
       }
@@ -85,9 +92,9 @@ function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M
 export class Ref<M extends Model = any> {
 
   constructor(Model: RefModel<any>, id: IDOf<M>, options: RefOptions = {}) {
-    this.Model = Model
-    this.id = id
-    this.foreignKey = options.foreignKey || 'id'
+    this.Model      = Model
+    this.id         = id
+    this.foreignKey = options.foreignKey ?? 'id'
 
     Object.defineProperty(this, 'cache', {enumerable: false})
   }
@@ -99,11 +106,7 @@ export class Ref<M extends Model = any> {
   protected cache: M | null | undefined = undefined
 
   public async get(): Promise<M | null> {
-    if (this.cache === undefined) {
-      await this.fetch()
-    }
-
-    return this.cache as M | null
+    return this.cache ??= await this.fetch()
   }
 
   public async fetch(): Promise<M | null> {
