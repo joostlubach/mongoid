@@ -10,7 +10,6 @@ import InvalidModelError from './InvalidModelError'
 import Metadata from './Metadata'
 import Query, { QueryOptions } from './Query'
 import ReferentialIntegrity from './ReferentialIntegrity'
-import { Ref } from './types/ref'
 import { isVirtual } from './types/virtual'
 import { ID, IDOf, ModelClass, SaveOptions, UniqueSpec } from './typings'
 import { withClientStackTrace } from './util'
@@ -191,30 +190,9 @@ export default class Model {
     Object.assign(this, coerced)
     this.originals = cloneDeep(coerced) as Partial<this>
 
-    await this.loadRefs()
-
     this.isNew     = false
     this.updatedAt = raw.updatedAt
     this.createdAt = raw.createdAt
-  }
-
-  private async loadRefs() {
-    const refs     = this.findRefs().filter(it => it.load)
-    const promises = refs.map(it => it.get())
-    await Promise.all(promises)
-  }
-
-  private findRefs(): Ref<any>[] {
-    const modelType = this.meta.modelType
-    if (modelType.traverse == null) { return [] }
-
-    const refs: Ref<any>[] = []
-    modelType.traverse(this, [], (value, path, type) => {
-      if (type.name === 'ref' && value instanceof Ref) {
-        refs.push(value as Ref<any>)
-      }
-    })
-    return refs
   }
 
   /**

@@ -23,15 +23,15 @@ export interface Options<PM extends Model = any> {
   onDelete?: RefDeleteStrategy<PM>
 
   /**
-   * Set to true to load this ref when the containing model is loaded.
+   * Set to true to always include this ref when the containing model is loaded.
    */
-  load?: boolean
+  include?: RefInclude
 }
 
 export interface RefOptions<PM extends Model = any> {
-  foreignKey?: string
-  onDelete?:   RefDeleteStrategy<PM>
-  load?:       boolean
+  foreignKey?:  string
+  onDelete?:    RefDeleteStrategy<PM>
+  include?: RefInclude
 }
 
 export interface RefModel<M extends Model = any> {
@@ -110,7 +110,7 @@ export class Ref<M extends Model = any> {
     this.Model      = Model
     this.id         = id
     this.foreignKey = options.foreignKey ?? 'id'
-    this.load       = options.load ?? false
+    this.include    = options.include ?? 'auto'
 
     Object.defineProperty(this, 'cache', {enumerable: false})
   }
@@ -118,7 +118,7 @@ export class Ref<M extends Model = any> {
   public readonly Model:      RefModel<any>
   public readonly id:         IDOf<M>
   public readonly foreignKey: string
-  public readonly load:       boolean
+  public readonly include:    RefInclude
 
   protected cache: M | null | undefined = undefined
 
@@ -145,14 +145,22 @@ export class Ref<M extends Model = any> {
     await this.cache?.reload()
   }
 
-  public static async getAll<M extends Model>(refs: Array<Ref<M>>): Promise<M[]> {
+  public static async getAll<M extends Model>(refs: Array<Ref<M>>, cache: boolean = true): Promise<M[]> {
     if (refs.length === 0) { return [] }
 
     const foreignKey = refs[0].foreignKey
     const ids        = uniq(refs.map(ref => ref.id))
 
-    const query = refs[0].Model.query()
-    return await query.filter({[foreignKey]: {$in: ids}}).all()
+    const query  = refs[0].Model.query()
+    const models = await query.filter({[foreignKey]: {$in: ids}}).all()
+
+    if (cache) {
+      for (const ref of refs) {
+        ref.cache = models.find(model => model.id === ref.id) ?? null
+      }
+    }
+
+    return models
   }
 
   public static async getMap<M extends Model>(refs: Array<Ref<M>>): Promise<Map<ID, M>> {
@@ -179,6 +187,7 @@ export class Ref<M extends Model = any> {
 
 }
 
+export type RefInclude = 'always' | 'never' | 'auto'
 export type CachedRef<M extends Model> = Ref<M> & {getCached: () => M | null}
 
 export function isRef<M extends Model>(arg: any): arg is Ref<M> {

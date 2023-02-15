@@ -264,7 +264,8 @@ export default class Query<M extends Model> {
    * Runs this query and returns a cursor returning model instances.
    */
   public run(options: RunOptions = {}): Cursor<M> {
-    return new Cursor(this, this.raw(options))
+    const {include, ...rest} = options
+    return new Cursor(this, this.raw(rest), {include})
   }
 
   /**
@@ -404,4 +405,5 @@ export interface RunOptions {
   trace?:   boolean
   label?:   string
   project?: AnyObject | null
+  include?: string[]
 }
