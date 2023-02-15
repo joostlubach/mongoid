@@ -9,14 +9,29 @@ import { ID, IDOf } from '../typings'
 import type { Reference } from '../ReferentialIntegrity'
 
 export interface Options<PM extends Model = any> {
-  model:       string
+  /** The name of the model for the ref */
+  model: string
+
+  /** The foreign key to use (defaults to `id`.) */
   foreignKey?: string
-  onDelete:    RefDeleteStrategy<PM>
+
+  /**
+   * The strategy to use when the referenced object is deleted.
+   *
+   * Default: `'ignore'`.
+   */
+  onDelete?: RefDeleteStrategy<PM>
+
+  /**
+   * Set to true to load this ref when the containing model is loaded.
+   */
+  load?: boolean
 }
 
 export interface RefOptions<PM extends Model = any> {
   foreignKey?: string
   onDelete?:   RefDeleteStrategy<PM>
+  load?:       boolean
 }
 
 export interface RefModel<M extends Model = any> {
@@ -60,7 +75,7 @@ function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M
       const foreignKey = options.foreignKey || 'id'
 
       const opts: Options<PM> = options
-      const refOptions: Omit<Options<PM>, 'model'> = omit(opts, 'model')
+      const refOptions: RefOptions<PM> = omit(opts, 'model')
 
       if (isID(value)) {
         return new Ref<M>(model, value, refOptions)
@@ -79,7 +94,7 @@ function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M
       if (value instanceof Ref) { return }
       if (isID(value)) { return }
 
-      const foreignKey = options.foreignKey || 'id'
+      const foreignKey = options.foreignKey ?? 'id'
       if (typeof value === 'object' && isID(value[foreignKey])) {
         return
       }
@@ -95,6 +110,7 @@ export class Ref<M extends Model = any> {
     this.Model      = Model
     this.id         = id
     this.foreignKey = options.foreignKey ?? 'id'
+    this.load       = options.load ?? false
 
     Object.defineProperty(this, 'cache', {enumerable: false})
   }
@@ -102,11 +118,16 @@ export class Ref<M extends Model = any> {
   public readonly Model:      RefModel<any>
   public readonly id:         IDOf<M>
   public readonly foreignKey: string
+  public readonly load:       boolean
 
   protected cache: M | null | undefined = undefined
 
   public async get(): Promise<M | null> {
     return this.cache ??= await this.fetch()
+  }
+
+  public getCached(): M | null | undefined {
+    return this.cache
   }
 
   public async fetch(): Promise<M | null> {
@@ -157,6 +178,8 @@ export class Ref<M extends Model = any> {
   }
 
 }
+
+export type CachedRef<M extends Model> = Ref<M> & {getCached: () => M | null}
 
 export function isRef<M extends Model>(arg: any): arg is Ref<M> {
   return arg instanceof Ref
