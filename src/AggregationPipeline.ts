@@ -462,7 +462,7 @@ export interface CountStage {
 
 export type OtherStage = Record<string, any>
 
-export type Expression = string | Record<string, any>
+export type Expression = string | number | Record<string, any>
 
 export interface AccumulatorSpec<S, U = S, I extends any[] = [], A extends any[] = []> {
   init:      (...args: I) => S
