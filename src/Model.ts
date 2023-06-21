@@ -443,7 +443,9 @@ export default class Model {
       this.recoerce()
     }
 
-    await this.beforeSave(this.isNew)
+    if (options.hooks !== false) {
+      await this.beforeSave(this.isNew)
+    }
 
     await withClientStackTrace(async () => {
       const now = new Date()
@@ -472,7 +474,10 @@ export default class Model {
 
     const wasNew = this.isNew
     this.isNew = false
-    await this.afterSave(wasNew)
+
+    if (options.hooks !== false) {
+      await this.afterSave(wasNew)
+    }
 
     // Update the originals so that the model is not seen as dirty anymore.
     this.originals = cloneDeep(this.attributes) as Partial<this>

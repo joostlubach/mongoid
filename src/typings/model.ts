@@ -1,8 +1,8 @@
+import { CreateIndexesOptions, Long, ObjectId } from 'mongodb'
+import { ObjectSchema, ObjectSchemaMap } from 'validator'
+import AggregationPipeline from '../AggregationPipeline'
 import Model from '../Model'
 import Query from '../Query'
-import { ObjectSchema, ObjectSchemaMap } from 'validator'
-import { ObjectId, CreateIndexesOptions, Long } from 'mongodb'
-import AggregationPipeline from '../AggregationPipeline'
 
 //------
 // Model options
@@ -82,4 +82,5 @@ export interface IDAdapter<I extends ID> {
 
 export interface SaveOptions {
   validate?: boolean
+  hooks?:    boolean
 }
