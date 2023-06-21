@@ -161,6 +161,28 @@ export default class Query<M extends Model> {
     return copy
   }
 
+  public union(other: Query<M>) {
+    const merged = new Query(this.Model)
+    merged.filters = [{
+      $or: [...this.filters, ...merged.filters],
+    }]
+
+    merged.sorts = [...this.sorts, ...other.sorts]
+    merged.projections =
+      this.projections == null && other.projections == null ? null :
+      this.projections == null ? {...other.projections} :
+      other.projections == null ? {...this.projections} :
+      {...this.projections, ...other.projections}
+
+    const skipCounts = sparse([this.skipCount, other.skipCount])
+    merged.skipCount = skipCounts.length > 0 ? Math.min(...skipCounts) : null
+
+    const limitCounts = sparse([this.limitCount, other.limitCount])
+    merged.limitCount = limitCounts.length > 0 ? Math.max(...limitCounts) : null
+
+    return merged
+  }
+
   //------
   // Pipeline conversion
 
