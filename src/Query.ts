@@ -169,7 +169,7 @@ export default class Query<M extends Model> {
 
     merged.sorts = [...this.sorts, ...other.sorts]
     merged.projections =
-      this.projections == null && other.projections == null ? null :
+      this.projections == null && other.projections == null ? {} :
       this.projections == null ? {...other.projections} :
       other.projections == null ? {...this.projections} :
       {...this.projections, ...other.projections}
@@ -263,14 +263,13 @@ export default class Query<M extends Model> {
   public async pluck<T = any>(firstProperty: string, ...properties: string[]): Promise<Array<{[property: string]: T}>>
   public async pluck(...properties: string[]) {
     return await withClientStackTrace(async () => {
-      const projection: AnyObject = {}
-      for (let property of properties) {
-        if (property === 'id') { property = '_id' }
-        projection[property] = 1
-      }
+      const project = properties.reduce((project, prop) => ({
+        ...project,
+        [prop === 'id' ? '_id' : prop]: 1,
+      }), {})
 
       const values: any[] = []
-      await this.raw(projection).forEach(doc => {
+      await this.raw({project}).forEach(doc => {
         const get = (prop: string) => doc[prop === 'id' ? '_id' : prop]
         if (properties.length === 1) {
           values.push(get(properties[0]))
