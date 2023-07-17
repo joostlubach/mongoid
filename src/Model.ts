@@ -604,7 +604,7 @@ export default class Model {
   public async validateUnique(attribute: keyof this, unique: boolean | UniqueSpec, result: ValidatorResult<any>) {
     if (!this.isDirty(attribute)) { return }
 
-    const spec = isPlainObject(unique) ? unique : {}
+    const spec = isPlainObject(unique) ? (unique as UniqueSpec) : {}
     if (spec.if != null && !spec.if(this)) { return }
 
     const serialized = this.serialize()

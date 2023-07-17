@@ -24,7 +24,11 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "inflected": "^2.0.4",
-    "mongodb": "^3.6.10"
+    "mongodb": "^4.6.0",
+    "strip-ansi": "^5.2.0",
+    "validator": "workspace:^",
+    "winston": "^3.10.0",
+    "ytil": "workspace:^"
   },
   "devDependencies": {
     "@types/inflected": "^1.1.29",

@@ -11,7 +11,9 @@ export default class Cursor<M extends Model> {
     private readonly options: CursorOptions
   ) {}
 
-  private Model = this.query.Model
+  private get Model() {
+    return this.query.Model
+  }
 
   public async count(): Promise<number> {
     return await this.query.count()

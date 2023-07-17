@@ -234,7 +234,7 @@ export default class AggregationPipeline<M extends Model> {
         }
       } else if ('$facet' in stage) {
         return {
-          $facet: Object.entries(stage.$facet).reduce((stage, [field, facet]) => {
+          $facet: Object.entries(stage.$facet as Record<string, Stage>).reduce((stage, [field, facet]) => {
             if ('pipeline' in facet) {
               return {...stage, [field]: facet.pipeline.resolveStages()}
             } else {

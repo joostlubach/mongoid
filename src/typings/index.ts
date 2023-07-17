@@ -1,5 +1,4 @@
-// @index: export * from ${relpath}
 export * from './changes'
-export * from './connection'
 export * from './model'
-// /index
+
+export { type DeleteResult, ObjectId, type UpdateResult } from 'mongodb'

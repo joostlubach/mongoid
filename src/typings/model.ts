@@ -25,6 +25,7 @@ export interface ConfigCommon {
 export type Index = SimpleIndex | IndexWithOptions
 export type DynamicIndex<M extends Model> = (model: M) => Promise<Primitive>
 export type ViewFunction<M extends Model> = (pipeline: AggregationPipeline<M>) => void
+export type Primitive = string | number | boolean | null | undefined
 
 export type SimpleIndex      = Record<string, number | 'text'>
 export type IndexWithOptions = [SimpleIndex, CreateIndexesOptions]

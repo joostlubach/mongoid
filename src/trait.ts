@@ -4,11 +4,11 @@ import Model from './Model'
 import { ModelClass } from './typings'
 
 interface Trait<T extends AnyMixin> {
-  <M extends Model>(Base: ModelClass<M>): ModelClass<M & InstanceOf<T>> & StaticsOf<T>
+  <M extends Model>(Base: ModelClass<M>): ModelClass<M & MixinInstance<T>> & MixinStatics<T>
   schema: ObjectSchema
 }
 interface ConfigurableTrait<T extends AnyMixin, Cfg> {
-  <M extends Model>(Base: ModelClass<M>, config?: Partial<Cfg>): ModelClass<M & InstanceOf<T>> & StaticsOf<T>
+  <M extends Model>(Base: ModelClass<M>, config?: Partial<Cfg>): ModelClass<M & MixinInstance<T>> & MixinStatics<T>
   schema: ObjectSchema
   config: (Target: any) => Cfg
 }
@@ -71,3 +71,14 @@ function registerHooks(Target: any, Mixin: AnyMixin) {
     }
   }
 }
+
+export type Constructor<T> = new (...args: any[]) => T
+export type Mixin<I, S> = S & {prototype: I}
+export type AnyMixin = Mixin<any, any>
+declare type MixinInstance<T extends AnyMixin | Constructor<any>> =
+  T extends {prototype: infer I} ? I :
+  T extends Constructor<infer I> ? I :
+  never
+
+declare type MixinStatics<T extends AnyMixin | Constructor<any>> =
+  Omit<T, 'new' | 'constructor'>

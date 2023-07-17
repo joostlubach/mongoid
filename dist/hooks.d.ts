@@ -1,0 +1,30 @@
+import Model from './Model';
+export interface Hooks {
+    beforeValidate: Set<BeforeValidateHook>;
+    beforeSave: Set<BeforeSaveHook>;
+    afterSave: Set<AfterSaveHook>;
+    beforeDelete: Set<BeforeDeleteHook>;
+    afterDelete: Set<AfterDeleteHook>;
+}
+export type HookName = keyof Hooks;
+export type Hook = BeforeValidateHook | BeforeSaveHook | AfterSaveHook | BeforeDeleteHook | AfterDeleteHook;
+export type BeforeValidateHook = (isNew: boolean) => any | Promise<any>;
+export type BeforeSaveHook = (isNew: boolean) => any | Promise<any>;
+export type AfterSaveHook = (isNew: boolean) => any | Promise<any>;
+export type BeforeDeleteHook = () => any | Promise<any>;
+export type AfterDeleteHook = () => any | Promise<any>;
+export declare function registerHook(Model: any, name: 'beforeValidate', hook: BeforeValidateHook): void;
+export declare function registerHook(Model: any, name: 'beforeSave', hook: BeforeSaveHook): void;
+export declare function registerHook(Model: any, name: 'afterSave', hook: AfterSaveHook): void;
+export declare function registerHook(Model: any, name: 'beforeDelete', hook: BeforeDeleteHook): void;
+export declare function registerHook(Model: any, name: 'afterDelete', hook: AfterDeleteHook): void;
+export declare function registerHook(Model: any, name: HookName, hook: Hook): void;
+export declare function callHook(model: Model, name: 'beforeValidate'): Promise<boolean>;
+export declare function callHook(model: Model, name: 'beforeSave', isNew: boolean): Promise<boolean>;
+export declare function callHook(model: Model, name: 'afterSave', isNew: boolean): Promise<boolean>;
+export declare function callHook(model: Model, name: 'beforeDelete'): Promise<boolean>;
+export declare function callHook(model: Model, name: 'afterDelete'): Promise<boolean>;
+export declare function callHook(model: Model, name: HookName, ...args: any[]): Promise<boolean>;
+export declare function getHooks(Class: any): Hooks | null;
+export declare function resolveHooks(Class: any, name: HookName): Hook[];
+export declare function hook(name: HookName): (prototype: any, key: string) => void;
