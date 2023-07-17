@@ -299,7 +299,7 @@ export default class AggregationPipeline<M extends Model> {
   public async pluck(...properties: string[]): Promise<Array<{[property: string]: any}>>
   public async pluck(...properties: string[]) {
     return await withClientStackTrace(async () => {
-      const projection: AnyObject = {}
+      const projection: Record<string, any> = {}
       for (let property of properties) {
         if (property === 'id') { property = '_id' }
         projection[property] = 1
@@ -350,7 +350,7 @@ export default class AggregationPipeline<M extends Model> {
     return this.collection.aggregate(stages)
   }
 
-  public toRawArray(): Promise<AnyObject[]> {
+  public toRawArray(): Promise<Record<string, any>[]> {
     return withClientStackTrace(() => {
       const cursor = this.raw()
       return cursor.toArray()

@@ -1,8 +1,8 @@
-import Model from './Model'
 import Change from './Change'
-import { ModelClass, ChangeListener } from './typings'
+import Model from './Model'
+import { ChangeListener, ModelClass } from './typings'
 
-const changeListeners: WeakMap<AnyObject, Set<ChangeListener<any>>> = new WeakMap()
+const changeListeners: WeakMap<Record<string, any>, Set<ChangeListener<any>>> = new WeakMap()
 
 //------
 // Listener registration

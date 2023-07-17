@@ -18,7 +18,7 @@ export const CONFIGS: WeakMap<any, [ConfigurableTrait<any, any>, any]> = new Wea
 export function trait<T extends AnyMixin>(schema: ObjectSchema, Mixin: T): Trait<T>
 export function trait<T extends AnyMixin, Cfg>(schema: ObjectSchema, Mixin: T, defaultConfig: Cfg): ConfigurableTrait<T, Cfg>
 export function trait<T extends AnyMixin, Cfg>(schema: ObjectSchema, Mixin: T, defaultConfig?: Cfg) {
-  const fn: ConfigurableTrait<T, Cfg> = <M extends Model>(Base: Constructor<M>, config: AnyObject = {}) => {
+  const fn: ConfigurableTrait<T, Cfg> = <M extends Model>(Base: Constructor<M>, config: Record<string, any> = {}) => {
     class Extended extends (Base as any) {}
     mixin(Extended, Mixin)
     registerHooks(Extended, Mixin)

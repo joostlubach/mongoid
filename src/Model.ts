@@ -19,7 +19,7 @@ export default class Model {
   //------
   // Constructor & properties
 
-  constructor(attributes: AnyObject = {}) {
+  constructor(attributes: Record<string, any> = {}) {
     const {id, ...rest} = attributes
     const coerced = this.coerce(rest, false)
     Object.defineProperty(this, 'originals', {value: null, writable: true, enumerable: false})
@@ -100,7 +100,7 @@ export default class Model {
   /**
    * Gets all attributes that are defined in the schema.
    */
-  public get attributes(): AnyObject {
+  public get attributes(): Record<string, any> {
     return this.meta.getAttributes(this)
   }
 
@@ -119,7 +119,7 @@ export default class Model {
    * Casts given attributes to the types specified in this model's schema. This is done automatically
    * in the {@link #assign} function.
    */
-  public coerce(raw: AnyObject, partial: boolean): AnyObject {
+  public coerce(raw: Record<string, any>, partial: boolean): Record<string, any> {
     const validator = new Validator()
 
     // For polymorphic models, the type property is important in determining the correct schema. If this
@@ -151,7 +151,7 @@ export default class Model {
       }
     }
 
-    return coerced as AnyObject
+    return coerced as Record<string, any>
   }
 
   /**
@@ -168,7 +168,7 @@ export default class Model {
    *
    * @param raw The attributes to assign.
    */
-  public assign(raw: AnyObject) {
+  public assign(raw: Record<string, any>) {
     const coerced = this.coerce(raw, true)
     Object.assign(this, coerced)
   }
@@ -178,7 +178,7 @@ export default class Model {
    *
    * @param attributes The attributes to hydrate with.
    */
-  public async hydrate(document: AnyObject) {
+  public async hydrate(document: Record<string, any>) {
     const {_id, type, ...raw} = this.unescapeKeys(document)
 
     const id = this.meta.idFromMongo(_id)
@@ -200,7 +200,7 @@ export default class Model {
    *
    * @param attributes The attributes to hydrate with.
    */
-  public static async hydrate<M extends Model>(this: ModelClass<M>, document: AnyObject): Promise<M> {
+  public static async hydrate<M extends Model>(this: ModelClass<M>, document: Record<string, any>): Promise<M> {
     const model = new this()
     await model.hydrate(document)
     return model
@@ -259,7 +259,7 @@ export default class Model {
    *
    * @param query An optional query object.
    */
-  public static async count<M extends Model>(this: ModelClass<M>, query: AnyObject = {}): Promise<number> {
+  public static async count<M extends Model>(this: ModelClass<M>, query: Record<string, any> = {}): Promise<number> {
     return await this.query().filter(query).count()
   }
 
@@ -275,7 +275,7 @@ export default class Model {
   /**
    * Shortcut for `Model.query().filter({...})`.
    */
-  public static filter<M extends Model>(this: ModelClass<M>, filters: AnyObject): Query<M> {
+  public static filter<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Query<M> {
     return this.query().filter(filters)
   }
 
@@ -284,7 +284,7 @@ export default class Model {
    *
    * @param query The query object.
    */
-  public static async findOne<M extends Model>(this: ModelClass<M>, filters: AnyObject): Promise<M | null> {
+  public static async findOne<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Promise<M | null> {
     return await this.query().findOne(filters)
   }
 
@@ -293,11 +293,11 @@ export default class Model {
    *
    * @param query The query object.
    */
-  public static async find<M extends Model>(this: ModelClass<M>, filters: AnyObject): Promise<M[]> {
+  public static async find<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Promise<M[]> {
     return this.query().filter(filters).all()
   }
 
-  public static async aggregate<M extends Model>(this: ModelClass<M>, pipeline: AnyObject[] = []): Promise<M[]> {
+  public static async aggregate<M extends Model>(this: ModelClass<M>, pipeline: Record<string, any>[] = []): Promise<M[]> {
     const all = await this.collection.aggregate(pipeline).toArray()
     return await Promise.all(all.map(model => this.hydrate(model)))
   }
@@ -343,7 +343,7 @@ export default class Model {
 
   public static async create<M extends Model>(
     this: ModelClass<M>,
-    attributes: AnyObject = {}
+    attributes: Record<string, any> = {}
   ) {
     const model = new this(attributes)
     await model.save()
@@ -361,9 +361,9 @@ export default class Model {
    */
   public static async ensure<M extends Model>(
     this: ModelClass<M>,
-    required: AnyObject,
-    defaults: AnyObject | ((model: M) => any) = {},
-    updates:  AnyObject | ((model: M) => any) = {},
+    required: Record<string, any>,
+    defaults: Record<string, any> | ((model: M) => any) = {},
+    updates:  Record<string, any> | ((model: M) => any) = {},
     options:  SaveOptions = {}
   ): Promise<M> {
     let model = await this.findOne(required)
@@ -392,12 +392,12 @@ export default class Model {
     return model
   }
 
-  public async update(attributes: AnyObject) {
+  public async update(attributes: Record<string, any>) {
     this.assign(attributes)
     await this.save()
   }
 
-  public static async update(filter: AnyObject, updates: AnyObject): Promise<UpdateResult | Document> {
+  public static async update(filter: Record<string, any>, updates: Record<string, any>): Promise<UpdateResult | Document> {
     return await this.query().filter(filter).update(updates)
   }
 
@@ -483,7 +483,7 @@ export default class Model {
     this.originals = cloneDeep(this.attributes) as Partial<this>
   }
 
-  private async buildInsertionDocument(now: Date): Promise<AnyObject> {
+  private async buildInsertionDocument(now: Date): Promise<Record<string, any>> {
     await this.ensureID()
 
     const data = this.escapeKeys(this.meta.serialize(this, false))
@@ -493,7 +493,7 @@ export default class Model {
 
     const referentialIntegrity = new ReferentialIntegrity(this)
 
-    const document: AnyObject = {
+    const document: Record<string, any> = {
       ...data,
 
       _id:         this.mongoID,
@@ -505,8 +505,8 @@ export default class Model {
     return document
   }
 
-  private async buildUpdate(now: Date): Promise<AnyObject> {
-    const $set: AnyObject = {
+  private async buildUpdate(now: Date): Promise<Record<string, any>> {
+    const $set: Record<string, any> = {
       updatedAt: now,
     }
 
@@ -528,7 +528,7 @@ export default class Model {
     }
   }
 
-  private escapeKeys(data: AnyObject) {
+  private escapeKeys(data: Record<string, any>) {
     if (!this.meta.config.escapeKeys) { return data }
 
     return deepMapKeys(data, key => {
@@ -539,7 +539,7 @@ export default class Model {
     })
   }
 
-  private unescapeKeys(data: AnyObject) {
+  private unescapeKeys(data: Record<string, any>) {
     if (!this.meta.config.escapeKeys) { return data }
 
     return deepMapKeys(data, key => {

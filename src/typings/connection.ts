@@ -1,4 +1,4 @@
-import { ObjectId, DeleteResult, UpdateResult } from 'mongodb'
+import { DeleteResult, ObjectId, UpdateResult } from 'mongodb'
 
 // export interface ConnectOptions {
 //   host:      string
@@ -7,7 +7,7 @@ import { ObjectId, DeleteResult, UpdateResult } from 'mongodb'
 //   user?:     string
 //   password?: string
 //   timeout?:  number
-//   ssl?:      AnyObject
+//   ssl?:      Record<string, any>
 
 //   createDatabase?: boolean
 // }

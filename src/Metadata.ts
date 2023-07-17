@@ -239,7 +239,7 @@ function deriveConfig(Model: ModelClass<any>): ModelConfig {
     unique,
   } = Model as any
 
-  const modelConfig: AnyObject = {
+  const modelConfig: Record<string, any> = {
     name:        Model.name,
     escapeKeys:  false,
     idGenerator: config.idGenerator,

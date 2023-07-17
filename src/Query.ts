@@ -62,7 +62,7 @@ export default class Query<M extends Model> {
   }
 
   public filters:     Filter[] = []
-  public projections: AnyObject | null = null
+  public projections: Record<string, any> | null = null
   public sorts:       Record<string, 1 | -1>[] = []
   public skipCount:   number | null = null
   public limitCount:  number | null = null
@@ -72,7 +72,7 @@ export default class Query<M extends Model> {
    * Gets all filters as a `{$and: [...]}` compound. If there are duplicate keys, e.g. two `$or`-keys, this will
    * make sure all filters end up in the Mongo DB query.
    */
-  public get compoundFilters(): AnyObject {
+  public get compoundFilters(): Record<string, any> {
     if (this.filters.length === 0) { return {} }
     return {$and: this.filters}
   }
@@ -80,14 +80,14 @@ export default class Query<M extends Model> {
   /**
    * Flattens all filters to a single object. Duplicate keys will be overwritten.
    */
-  public get flattenedFilters(): AnyObject {
+  public get flattenedFilters(): Record<string, any> {
     return Object.assign({}, ...this.filters)
   }
 
   //------
   // Modification interface
 
-  public filter(...filters: AnyObject[]): Query<M> {
+  public filter(...filters: Record<string, any>[]): Query<M> {
     const copy = this.copy()
 
     for (const filter of filters) {
@@ -113,7 +113,7 @@ export default class Query<M extends Model> {
       } else {
         return filter
       }
-    }).filter(Boolean) as AnyObject[]
+    }).filter(Boolean) as Record<string, any>[]
 
     return copy
   }
@@ -130,13 +130,13 @@ export default class Query<M extends Model> {
     return copy
   }
 
-  public project(projections: AnyObject): Query<M> {
+  public project(projections: Record<string, any>): Query<M> {
     const copy = this.copy()
     copy.projections = projections
     return copy
   }
 
-  public sort(sorts: AnyObject): Query<M> {
+  public sort(sorts: Record<string, any>): Query<M> {
     const {id, ...rest} = sorts
     const copy = this.copy()
     copy.sorts.unshift({...rest, ...(id == null ? null : {_id: id})})
@@ -238,7 +238,7 @@ export default class Query<M extends Model> {
     return documents[0] ?? null
   }
 
-  public async findOne(filters?: AnyObject): Promise<M | null> {
+  public async findOne(filters?: Record<string, any>): Promise<M | null> {
     return await this.filter(filters || {}).first()
   }
 
@@ -371,7 +371,7 @@ export default class Query<M extends Model> {
    *
    * @param updates The updates.
    */
-  public async update(updates: AnyObject): Promise<UpdateResult | Document> {
+  public async update(updates: Record<string, any>): Promise<UpdateResult | Document> {
     return await withClientStackTrace(
       () => this.collection.updateMany(this.compoundFilters, updates)
     )
@@ -399,7 +399,7 @@ export default class Query<M extends Model> {
     return pick(this, ['filters', 'projections', 'sorts', 'skipCount', 'limitCount', 'collation'])
   }
 
-  public static deserialize<M extends Model = any>(Model: ModelClass<M>, raw: AnyObject): Query<M> {
+  public static deserialize<M extends Model = any>(Model: ModelClass<M>, raw: Record<string, any>): Query<M> {
     const query = new Query(Model)
     Object.assign(query, raw)
     return query
@@ -412,8 +412,8 @@ function serializeProjections(projections: Record<string, any> | null) {
   return mapKeys(projections, (val, key) => key === 'id' ? '_id' : key)
 }
 
-function removeUndefineds(filters: AnyObject) {
-  const result: AnyObject = {}
+function removeUndefineds(filters: Record<string, any>) {
+  const result: Record<string, any> = {}
   for (const [key, value] of Object.entries(filters)) {
     if (value !== undefined) {
       result[key] = value
@@ -425,6 +425,6 @@ function removeUndefineds(filters: AnyObject) {
 export interface RunOptions {
   trace?:   boolean
   label?:   string
-  project?: AnyObject | null
+  project?: Record<string, any> | null
   include?: string[]
 }

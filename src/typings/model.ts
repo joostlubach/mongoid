@@ -61,7 +61,7 @@ export type PolyModelConfig<SM extends ObjectSchemaMap> = ConfigCommon & {
 // Misc
 
 export interface ModelClass<M extends Model> extends Omit<typeof Model, 'new' | 'prototype'> {
-  new (attributes?: AnyObject): M
+  new (attributes?: Record<string, any>): M
   prototype: M
 }
 
