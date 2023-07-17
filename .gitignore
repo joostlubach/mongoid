@@ -9,7 +9,10 @@ node_modules
 /coverage
 
 # production
-/build
+/dist
+/.build
+turbo-build.log
+.turbo
 
 # misc
 .DS_Store
