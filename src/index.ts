@@ -2,7 +2,7 @@ export { default, getClient, connect, connected, disconnect } from './client'
 export { default as config, type Config, configure } from './config'
 export { default as models, register } from './models'
 export { hook, registerHook, getHooks, type Hooks } from './hooks'
-export { trait } from './trait'
+export { trait, type Trait, type ConfigurableTrait } from './trait'
 
 export { default as Model } from './Model'
 export { default as Change } from './Change'

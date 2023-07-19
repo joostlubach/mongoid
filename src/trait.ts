@@ -3,11 +3,11 @@ import { getHooks, registerHook } from './hooks'
 import Model from './Model'
 import { ModelClass } from './typings'
 
-interface Trait<T extends AnyMixin> {
+export interface Trait<T extends AnyMixin> {
   <M extends Model>(Base: ModelClass<M>): ModelClass<M & MixinInstance<T>> & MixinStatics<T>
   schema: ObjectSchema
 }
-interface ConfigurableTrait<T extends AnyMixin, Cfg> {
+export interface ConfigurableTrait<T extends AnyMixin, Cfg> {
   <M extends Model>(Base: ModelClass<M>, config?: Partial<Cfg>): ModelClass<M & MixinInstance<T>> & MixinStatics<T>
   schema: ObjectSchema
   config: (Target: any) => Cfg
