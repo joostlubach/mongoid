@@ -81,14 +81,13 @@ export function resolveHooks(Class: any, name: HookName): Hook[] {
 }
 
 // Decorator
-export function hook(name: HookName) {
-  return (target: Object, context: ClassMethodDecoratorContext) => {
+export function hook(name: HookName): MethodDecorator {
+  return (target, key) => {
     if (!(target instanceof Model)) {
       throw new Error(`@hook() can only be used on methods of a Model`)
     }
 
     const prototype = target as any
-    const key       = context.name
     registerHook(target.meta.Model, name, prototype[key] as Hook)
   }
 }
