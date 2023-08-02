@@ -17,12 +17,14 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "types": "./dist/cjs/index.d.ts"
     },
     "./types": {
-      "import": "./dist/types/index.js",
-      "types": "./dist/types/index.d.ts"
+      "require": "./dist/cjs/types/index.js",
+      "import": "./dist/esm/types/index.js",
+      "types": "./dist/cjs/types/index.d.ts"
     }
   },
   "dependencies": {
