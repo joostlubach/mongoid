@@ -19,6 +19,7 @@ import { ID, ModelClass } from './typings'
 import { withClientStackTrace } from './util'
 
 export type Filter = Record<string, any>
+export type Sort = Record<string, 1 | -1>
 
 export interface QueryOptions {
   collection?: string
@@ -63,7 +64,7 @@ export default class Query<M extends Model> {
 
   public filters:     Filter[] = []
   public projections: Record<string, any> | null = null
-  public sorts:       Record<string, 1 | -1>[] = []
+  public sorts:       Sort[] = []
   public skipCount:   number | null = null
   public limitCount:  number | null = null
   public collation:   CollationOptions | null = null
@@ -395,8 +396,15 @@ export default class Query<M extends Model> {
   //-------
   // Serialization
 
-  public serialize() {
-    return pick(this, ['filters', 'projections', 'sorts', 'skipCount', 'limitCount', 'collation'])
+  public serialize(): QueryRaw {
+    return {
+      filters:     this.filters,
+      sorts:       this.sorts,
+      projections: this.projections,
+      skipCount:   this.skipCount,
+      limitCount:  this.limitCount,
+      collation:   this.collation
+    }
   }
 
   public static deserialize<M extends Model = any>(Model: ModelClass<M>, raw: Record<string, any>): Query<M> {
@@ -420,6 +428,15 @@ function removeUndefineds(filters: Record<string, any>) {
     }
   }
   return result
+}
+
+export interface QueryRaw {
+  filters:      Filter[]
+  sorts:        Sort[]
+  projections:  Record<string, string | number> | null
+  limitCount:   number | null
+  skipCount:    number | null
+  collation:    CollationOptions | null
 }
 
 export interface RunOptions {
