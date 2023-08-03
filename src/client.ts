@@ -32,17 +32,20 @@ export async function connect(uri: string) {
   })
 
   const url = URL.parse(uri)
-  const dbName = url.pathname!.slice(1)
+  const dbName = url.pathname?.slice(1)
+  if (dbName == null) {
+    config.logger.warn(chalk`{yellow △} No database name found in ${uri}`)
+  }
 
   CLIENT = client
   DB = client.db(dbName)
 
-  config.logger.info(chalk.dim(`Connected to ${uri}`))
+  config.logger.info(chalk`{green √} Connected to ${uri}`)
 }
 
 export function disconnect() {
   CLIENT.close()
-  config.logger.debug(chalk.dim("Connection closed"))
+  config.logger.debug(chalk`{red ◼︎} Connection closed`)
 }
 
 export function connected() {
