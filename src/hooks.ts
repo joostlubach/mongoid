@@ -88,7 +88,6 @@ export function hook(name: HookName): MethodDecorator {
       throw new Error(`@hook() can only be used on methods of a Model`)
     }
 
-    const prototype = target as any
     registerHook(target.meta.Model, name, descriptor.value as Hook)
   }
 }

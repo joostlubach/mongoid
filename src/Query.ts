@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { cloneDeep, mapKeys, omit, pick } from 'lodash'
+import { cloneDeep, mapKeys, omit } from 'lodash'
 import {
   CollationOptions,
   Collection,

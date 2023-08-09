@@ -12,12 +12,14 @@ const stub = new Proxy({}, {
 let CLIENT: MongoClient = stub as MongoClient
 let DB: Db = stub as Db
 
-export default function(): Db {
+function db(): Db {
   if (DB == null) {
     throw new Error("Not yet connected")
   }
   return DB
 }
+
+export default db
 
 export function getClient(): MongoClient {
   if (CLIENT == null) {
