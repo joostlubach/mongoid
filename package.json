@@ -18,24 +18,34 @@
   "exports": {
     ".": {
       "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
+        "types": "./dist/cjs/frontend/index.d.ts",
+        "default": "./dist/cjs/frontend/index.js"
       },
       "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
+        "types": "./dist/esm/frontend/index.d.ts",
+        "default": "./dist/esm/frontend/index.js"
+      }
+    },
+    "./backend": {
+      "require": {
+        "types": "./dist/cjs/backend/index.d.ts",
+        "default": "./dist/cjs/backend/index.js"
+      },
+      "import": {
+        "types": "./dist/esm/backend/index.d.ts",
+        "default": "./dist/esm/backend/index.js"
       }
     },
     "./types": {
-      "require": "./dist/cjs/types/index.js",
-      "import": "./dist/esm/types/index.js",
-      "types": "./dist/cjs/types/index.d.ts"
+      "require": "./dist/cjs/backend/types/index.js",
+      "import": "./dist/esm/backend/types/index.js",
+      "types": "./dist/cjs/backend/types/index.d.ts"
     }
   },
   "dependencies": {
     "chalk": "^4.1.2",
     "inflected": "^2.0.4",
-    "mongodb": "^4.6.0",
+    "mongodb": "^6.0.0",
     "strip-ansi": "^5.2.0",
     "validator": "workspace:^",
     "winston": "^3.10.0",

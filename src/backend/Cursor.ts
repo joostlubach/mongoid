@@ -1,38 +1,34 @@
-import { FindCursor as MongoCursor } from 'mongodb'
-import Model from './Model'
-import Query from './Query'
-import { Ref, RefModel } from './types/ref'
+import { AggregationCursor, FindCursor as MongoCursor } from 'mongodb'
+import { Ref } from 'types/ref'
+import Model from '../Model'
+import { ModelClass } from '../typings'
+import ModelBackend from './ModelBackend'
 
 export default class Cursor<M extends Model> {
 
   constructor(
-    public readonly query:  Query<M>,
-    public readonly cursor: MongoCursor,
-    private readonly options: CursorOptions
+    public readonly backend: ModelBackend<M>,
+    public readonly cursor: MongoCursor | AggregationCursor,
+    private readonly options: CursorOptions = {}
   ) {}
 
   private get Model() {
-    return this.query.Model
+    return this.backend.Model
   }
 
-  public async count(): Promise<number> {
-    return await this.query.count()
-  }
-
-  public async forEach(iterator: (model: M) => void | Promise<void>): Promise<void> {
-    const promises = await this.cursor.map(async document => {
+  public async *[Symbol.asyncIterator]() {
+    for await (const document of this.cursor) {
       const model = await this.Model.hydrate(document) as M
       await this.includeRefs([model])
-      await iterator(model)
-    }).toArray()
-    return await Promise.all(promises).then(() => undefined)
+      yield model
+    }
   }
 
-  public async map<U>(iterator: (model: M) => U | Promise<U>): Promise<Promise<U>[]> {
+  public async map<U>(transform: (model: M) => U | Promise<U>): Promise<Promise<U>[]> {
     return await this.cursor.map(async document => {
       const model = await this.Model.hydrate(document) as M
       await this.includeRefs([model])
-      return await iterator(model)
+      return await transform(model)
     }).toArray()
   }
 
@@ -59,7 +55,7 @@ export default class Cursor<M extends Model> {
   // Include refs
 
   private async includeRefs(models: M[]) {
-    const refs: Map<RefModel<any>, Ref<any>[]> = new Map()
+    const refs: Map<ModelClass<any>, Ref<any>[]> = new Map()
 
     for (const model of models) {
       this.findIncludeRefs(model, (ref: Ref<any>) => {
@@ -71,7 +67,7 @@ export default class Cursor<M extends Model> {
 
     const promises = Array
       .from(refs.values())
-      .map(async refs => Ref.getAll(refs))
+      .map(async refs => this.backend.getAllRefs(refs))
 
     await Promise.all(promises)
   }

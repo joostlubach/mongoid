@@ -1,29 +1,38 @@
-import chalk from 'chalk'
-import { omit, omitBy, pick } from 'lodash'
-import { AggregationCursor as MongoAggregationCursor, Collection } from 'mongodb'
-import AggregationCursor from './AggregationCursor'
-import config from './config'
-import Model from './Model'
-import { ModelClass } from './typings'
-import { withClientStackTrace } from './util'
+import { omitBy } from 'lodash'
+import Model from '../Model'
+import { ModelClass } from '../typings'
+import {
+  AccumulatorSpec,
+  AddFieldsStage,
+  Expression,
+  LimitStage,
+  MatchStage,
+  PipelineLookupConfig,
+  ProjectStage,
+  SimpleLookupConfig,
+  SkipStage,
+  SortStage,
+  Stage,
+  UnwindStage,
+} from './typings'
 
 export default class AggregationPipeline<M extends Model> {
 
   constructor(
-    public ModelOrCollection: ModelClass<M> | Collection,
-    private stages: Stage[] = []
+    public ModelOrCollectionName: ModelClass<M> | string,
+    private _stages: Stage[] = []
   ) {
-    if (ModelOrCollection instanceof Collection) {
-      this.Model      = null
-      this.collection = ModelOrCollection as Collection
+    if (typeof ModelOrCollectionName === 'string') {
+      this.Model          = null
+      this.collectionName = ModelOrCollectionName
     } else {
-      this.Model      = ModelOrCollection as ModelClass<M>
-      this.collection = this.Model.collection
+      this.Model          = ModelOrCollectionName
+      this.collectionName = this.Model.meta.collectionName
     }
   }
 
   public readonly Model: ModelClass<M> | null
-  public readonly collection: Collection
+  public readonly collectionName: string
 
   private _facetName: string | null = null
   public get facetName() {
@@ -33,13 +42,17 @@ export default class AggregationPipeline<M extends Model> {
   //------
   // Stages
 
+  public stages() {
+    return this._stages
+  }
+
   /**
    * Adds an arbitrary stage to the pipeline.
    *
    * @param stage The stage to add.
    */
   public addStage(...stages: Stage[]) {
-    this.stages.push(...stages)
+    this._stages.push(...stages)
     return this
   }
 
@@ -197,8 +210,8 @@ export default class AggregationPipeline<M extends Model> {
   public facet(field: string): AggregationPipeline<M>
   public facet(facets: Record<string, Stage[]>): this
   public facet(arg: string | Record<string, Stage[]>) {
-    const facetStageIndex = this.stages.findIndex(it => '$facet' in it) as any
-    if (facetStageIndex >= 0 && facetStageIndex !== this.stages.length - 1) {
+    const facetStageIndex = this._stages.findIndex(it => '$facet' in it) as any
+    if (facetStageIndex >= 0 && facetStageIndex !== this._stages.length - 1) {
       throw new Error("You must add all facet stages consecutively")
     }
 
@@ -206,10 +219,10 @@ export default class AggregationPipeline<M extends Model> {
       this.addStage({$facet: {}})
     }
 
-    const facetStage = this.stages[this.stages.length - 1] as Record<'$facet', Record<string, Stage[] | {pipeline: AggregationPipeline<M>}>>
+    const facetStage = this._stages[this._stages.length - 1] as Record<'$facet', Record<string, Stage[] | {pipeline: AggregationPipeline<M>}>>
     if (typeof arg === 'string') {
       const field    = arg
-      const pipeline = new AggregationPipeline(this.Model ?? this.collection, [])
+      const pipeline = new AggregationPipeline(this.Model ?? this.collectionName, [])
       pipeline._facetName = arg
       facetStage.$facet[field] = {pipeline}
       return pipeline
@@ -223,7 +236,7 @@ export default class AggregationPipeline<M extends Model> {
   // Stage resolution
 
   public resolveStages(): any[] {
-    return this.stages.map(stage => {
+    return this._stages.map(stage => {
       if ('$lookup' in stage && 'pipeline' in stage.$lookup) {
         const {pipeline, ...rest} = stage.$lookup as PipelineLookupConfig<any>
         return {
@@ -249,115 +262,6 @@ export default class AggregationPipeline<M extends Model> {
   }
 
   //------
-  // Data retrieval
-
-  /**
-   * Counts documents matching the current '$match' stages. Any other operations are not applied.
-   */
-  public countMatching(): Promise<number> {
-    const filters: Record<string, any>[] = []
-    for (const stage of this.stages) {
-      if (!('$match' in stage)) { continue }
-      filters.push(stage.$match)
-    }
-
-    return withClientStackTrace(() => (
-      this.collection.count({$and: filters})
-    ))
-  }
-
-  /**
-   * Retrieves all (hydrated) models for this pipeline.
-   */
-  public async all(): Promise<M[]> {
-    return await this.run().toArray()
-  }
-
-  /**
-   * Retrieves the first (hydrated) model from this pipeline.
-   */
-  public async first(): Promise<M | null> {
-    const documents = await this.limit(1).all()
-    return documents[0] ?? null
-  }
-
-  /**
-   * Asynchronously iterates through all models of this pipeline.
-   *
-   * @param iterator The iterator to use.
-   */
-  public async forEach(iterator: (model: M) => any) {
-    await this.run().forEach(iterator)
-  }
-
-  /**
-   * Without hydrating, plucks the given property from all documents in this pipeline.
-   *
-   * @param property The property to pluck.
-   */
-  public async pluck(property: string): Promise<any[]>
-  public async pluck(...properties: string[]): Promise<Array<{[property: string]: any}>>
-  public async pluck(...properties: string[]) {
-    return await withClientStackTrace(async () => {
-      const projection: Record<string, any> = {}
-      for (let property of properties) {
-        if (property === 'id') { property = '_id' }
-        projection[property] = 1
-      }
-
-      let rows = await this.toRawArray()
-      rows = rows.map(row => ({
-        id: this.Model?.meta.idFromMongo(row._id) ?? row._id,
-        ...omit(row, '_id'),
-      }))
-
-      if (properties.length === 1) {
-        return rows.map(row => row[properties[0]])
-      } else {
-        return rows.map(row => pick(row, properties))
-      }
-    })
-  }
-
-  /**
-   * Runs this query and returns a cursor returning model instances.
-   */
-  public run(): AggregationCursor<M> {
-    if (this.Model == null) {
-      throw new Error("Cannot use .run() on a raw aggregation pipeline.")
-    }
-
-    return new AggregationCursor(this.Model, this.raw())
-  }
-
-  /**
-   * Explains this query (calls `.explain()` on the underlying cursor).
-   */
-  public async explain() {
-    return await withClientStackTrace(async () => (
-      this.raw().explain()
-    ))
-  }
-
-  /**
-   * Runs the query and retrieves a raw MongoDB cursor.
-   */
-  public raw(): MongoAggregationCursor {
-    const stages = this.resolveStages()
-    if (config.traceEnabled) {
-      config.logger.debug(chalk`AGG {bold ${this.Model?.name ?? this.collection.collectionName}} {dim ${JSON.stringify(stages)}}`)
-    }
-    return this.collection.aggregate(stages)
-  }
-
-  public toRawArray(): Promise<Record<string, any>[]> {
-    return withClientStackTrace(() => {
-      const cursor = this.raw()
-      return cursor.toArray()
-    })
-  }
-
-  //------
   // Accumulators
 
   public static buildAccumulator<S, U = S>(spec: AccumulatorSpec<S, U, any[], any[]>): Record<string, any>
@@ -378,101 +282,4 @@ export default class AggregationPipeline<M extends Model> {
     }
   }
 
-}
-
-export type Stage =
-  | MatchStage
-  | LookupStage
-  | UnwindStage
-  | ProjectStage
-  | GroupStage
-  | AddFieldsStage
-  | SortStage
-  | LimitStage
-  | SkipStage
-  | CountStage
-  | OtherStage
-
-export interface MatchStage {
-  $match: Record<string, any>
-}
-
-export interface LookupStage {
-  $lookup: LookupConfig
-}
-
-export type LookupConfig = SimpleLookupConfig | PipelineLookupConfig<any>
-
-export interface CommonLookupConfig {
-  as:   string
-}
-
-export interface SimpleLookupConfig extends CommonLookupConfig {
-  from:          string | ModelClass<any>
-  localField:    string
-  foreignField?: string
-}
-
-export interface PipelineLookupConfig<M extends Model> extends CommonLookupConfig {
-  from:      ModelClass<M>
-  let?:      Record<string, any>
-  pipeline?: AggregationPipeline<M>
-  stages?:   Stage[]
-}
-
-export interface UnwindStage {
-  $unwind: {
-    path:                        string
-    includeArrayIndex?:          string
-    preserveNullAndEmptyArrays?: boolean
-  }
-}
-
-export interface ProjectStage {
-  $project: Record<string, any>
-}
-
-export interface GroupStage {
-  $group: {
-    _id?: Expression
-  } & {
-    [field: string]: Record<string, Expression>
-  }
-}
-
-export interface AddFieldsStage {
-  $addFields: Record<string, any>
-}
-
-export interface SortStage {
-  $sort: Record<string, -1 | 1>
-}
-
-export interface LimitStage {
-  $limit: number
-}
-
-export interface SkipStage {
-  $skip: number
-}
-
-export interface CountStage {
-  $count: string
-}
-
-export type OtherStage = Record<string, any>
-
-export type Expression = string | number | Record<string, any>
-
-export interface AccumulatorSpec<S, U = S, I extends any[] = [], A extends any[] = []> {
-  init:      (...args: I) => S
-  initArgs?: I
-
-  accumulate:     (state: S, ...args: A) => S
-  accumulateArgs: A
-
-  merge:     (state1: S, state2: S) => S
-  finalize?: (state: S) => U
-
-  lang?:      string
 }

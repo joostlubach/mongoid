@@ -1,20 +1,22 @@
 import chalk from 'chalk'
 import { isArray, some, uniq } from 'lodash'
+import { Ref, RefDeleteStrategy, RefOptions } from 'types/ref'
 import { flatMap, MapBuilder, modifyInObject, splitArray } from 'ytil'
-import config from './config'
-import Model from './Model'
-import models from './models'
-import { isCustomStrategy, isSetStrategy, Ref, RefDeleteStrategy, RefOptions } from './types/ref'
-import { ID, ModelClass } from './typings'
+import config from '../config'
+import Model from '../Model'
+import { getAllModelClasses, getModelClass } from '../registry'
+import { ID, ModelClass } from '../typings'
+import ModelBackend from './ModelBackend'
 
-export default class ReferentialIntegrity {
+export default class ReferentialIntegrity<M extends Model> {
 
   constructor(
-    private readonly model: Model
+    private readonly backend: ModelBackend<M>,
+    private readonly model: M
   ) {}
 
   private get Model() {
-    return this.model.constructor as ModelClass<any>
+    return this.model.constructor as ModelClass<M>
   }
 
   /**
@@ -32,12 +34,12 @@ export default class ReferentialIntegrity {
 
     if (options.fix) {
       if (some(invalid, ([, strategy]) => strategy === 'cascade')) {
-        await this.model.delete()
+        await this.backend.deleteOne(this.model)
         return {status: 'deleted'}
       }
 
       if (some(invalid, ([, strategy]) => strategy === 'delete')) {
-        await this.Model.filter({id: this.model.id}).delete()
+        await this.backend.query(this.Model.filter({id: this.model.id})).deleteAll()
         return {status: 'deleted'}
       }
 
@@ -54,7 +56,7 @@ export default class ReferentialIntegrity {
       }
 
       if (fixedReferences.length > 0) {
-        await this.model.save()
+        await this.backend.save(this.model)
       }
 
       return {
@@ -74,12 +76,12 @@ export default class ReferentialIntegrity {
   }
 
   private async checkReference(reference: Reference): Promise<true | RefDeleteStrategy<any>> {
-    const Model = (models as any)[reference.model]
+    const Model = getModelClass(reference.model)
     if (Model == null) {
       throw new Error(`Invalid reference: model \`${reference.model}\` does not exist`)
     }
 
-    const count = await Model.count({id: reference.id})
+    const count = await this.backend.query(this.Model.filter({id: reference.id})).count()
     if (count > 0) { return true }
 
     const strategy = findRefStrategy(this.model, reference.path)
@@ -127,8 +129,8 @@ export default class ReferentialIntegrity {
   public async findAffectedModels(): Promise<AffectedModel[]> {
     const affectedModels: AffectedModel[] = []
 
-    const promises = Object.values(models).map(async Model => {
-      const items = await Model.filter({
+    const promises = getAllModelClasses().map(async Model => {
+      const items = await this.backend.query(Model.filter({
         _references: {
           $elemMatch: {
             model: this.Model.name,
@@ -138,14 +140,14 @@ export default class ReferentialIntegrity {
       }).project({
         id:          1,
         _references: 1,
-      }).toRawArray()
+      })).rawArray()
 
       for (const item of items) {
         affectedModels.push({
           Model:      Model,
           id:         item._id,
           references: item._references.filter((ref: Reference) => (
-            ref.model === this.Model.name && ref.id === this.model.id
+            ref.model === Model.modelName && ref.id === this.model.id
           )),
         })
       }
@@ -186,21 +188,23 @@ export default class ReferentialIntegrity {
     const byModelClass = MapBuilder.groupBy(affectedModels, model => model.Model)
     for (const [Model, models] of byModelClass) {
       const paths = uniq(flatMap(models, model => model.references).map(ref => ref.path))
-      await Model.filter({
+      await this.backend.query(Model.filter({
         $or: paths.map(path => ({
           [path]: this.model.id,
         })),
-      }).delete()
+      })).deleteAll()
     }
   }
 
   private async cascadeDelete(affectedModel: AffectedModel) {
-    const model = await affectedModel.Model.get(affectedModel.id)
+    const backend = this.backend.cloneFor(affectedModel.Model)
+    const model = await backend.query().get(affectedModel.id)
     await model.delete()
   }
 
   private async processReferences(affectedModel: AffectedModel) {
-    const model = await affectedModel.Model.get(affectedModel.id)
+    const backend = this.backend.cloneFor(affectedModel.Model)
+    const model = await backend.query().get(affectedModel.id)
 
     const modifieds: boolean[] = []
     for (const reference of affectedModel.references) {
@@ -217,7 +221,7 @@ export default class ReferentialIntegrity {
   }
 
   private async fixReference(model: Model, reference: Reference, strategy: RefDeleteStrategy<any>) {
-    if (isCustomStrategy(strategy)) {
+    if (RefDeleteStrategy.isCustomStrategy(strategy)) {
       return await strategy(model, reference)
     }
 
@@ -228,7 +232,7 @@ export default class ReferentialIntegrity {
         } else {
           parent[key] = null
         }
-      } else if (isSetStrategy(strategy)) {
+      } else if (RefDeleteStrategy.isSetStrategy(strategy)) {
         parent[key] = strategy.$set
       } else {
         return false

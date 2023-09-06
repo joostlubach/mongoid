@@ -18,6 +18,7 @@ export async function withClientStackTrace<T>(fn: () => PromiseLike<T> | T): Pro
   }
 }
 
+
 export function deepMapKeys(arg: any, fn: (key: string | symbol) => any): any {
   if (isPlainObject(arg)) {
     const result: Record<string, any> = {}
@@ -30,4 +31,11 @@ export function deepMapKeys(arg: any, fn: (key: string | symbol) => any): any {
   } else {
     return arg
   }
+}
+
+export function indexName(keys: {[key: string]: number | 'text'}, options: {name?: string}) {
+  if (options.name) { return options.name }
+  if (Object.values(keys).includes('text')) { return 'text' }
+
+  return Object.keys(keys).map(key => `${key}_${keys[key]}`).join('_')
 }

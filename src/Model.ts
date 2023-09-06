@@ -1,18 +1,11 @@
-import chalk from 'chalk'
-import { cloneDeep, isEqual, isFunction, isPlainObject, some } from 'lodash'
-import { Collection, DeleteResult, Document, UpdateResult } from 'mongodb'
-import Validator, { INVALID, ObjectSchema, ValidatorResult } from 'validator'
-import { deepMapKeys } from 'ytil'
-import { emitCreate, emitDelete, emitUpdate } from './changes'
-import config from './config'
-import { callHook } from './hooks'
-import InvalidModelError from './InvalidModelError'
-import Metadata from './Metadata'
+import { cloneDeep, isEqual, some } from 'lodash'
+import Validator, { INVALID } from 'validator'
+import Meta from './Meta'
 import Query, { QueryOptions } from './Query'
-import ReferentialIntegrity from './ReferentialIntegrity'
+import { getModelMeta } from './registry'
 import { isVirtual } from './types/virtual'
-import { ID, IDOf, ModelClass, SaveOptions, UniqueSpec } from './typings'
-import { withClientStackTrace } from './util'
+import { ID, ModelClass } from './typings'
+import { deepMapKeys } from './util'
 
 export default class Model {
 
@@ -41,50 +34,39 @@ export default class Model {
    */
   public isNew: boolean
 
-  //------
-  // Metadata
+  // #region Meta
 
-  public static get meta(): Metadata<any> {
-    return new Metadata(this)
+  public get ModelClass() {
+    return this.constructor as ModelClass<this>
   }
 
-  public static get collection(): Collection {
-    return this.meta.collection
+  public static get meta(): Meta<any> {
+    return getModelMeta(this)
   }
 
-  public get meta(): Metadata<this> {
-    const klass = this.constructor as typeof Model
-    return klass.meta
+  public get meta() {
+    return this.ModelClass.meta
   }
 
-  public get schema(): ObjectSchema {
+  public static get modelName() {
+    return this.meta.modelName
+  }
+
+  public get modelName() {
+    return this.ModelClass.modelName
+  }
+
+  public get schema() {
     return this.meta.getSchema(this)
   }
 
-  //------
-  // Lifecycle
+  // #endregion
 
-  private static initialized = false
-
-  /**
-   * Initializes this model.
-   */
-  public static async initialize() {
-    if (this.initialized) { return }
-    this.initialized = true
-
-    config.logger.info(chalk`Initializing model {yellow ${this.name}}`)
-
-    await this.meta.createIndexes()
-    await this.meta.createViews()
-  }
-
-  //------
-  // ID
+  // #region ID
 
   public async ensureID(): Promise<ID> {
     if (this.id == null) {
-      this.id = await this.meta.config.idGenerator(this)
+      this.id = await this.meta.generateID(this)
     }
 
     return this.id
@@ -94,8 +76,9 @@ export default class Model {
     return this.meta.idToMongo(this.id)!
   }
 
-  //------
-  // Attributes
+  // #endregion
+
+  // #region Attributes
 
   /**
    * Gets all attributes that are defined in the schema.
@@ -212,12 +195,12 @@ export default class Model {
    *
    * @param attribute An attribute to check or leave out to check the entire model.
    */
-  public isDirty(attribute?: keyof this): boolean {
+  public isModified(attribute?: keyof this): boolean {
     if (this.originals == null) { return true }
 
     if (attribute === undefined) {
       const attributes = Object.keys(this.schema)
-      return some(attributes, attribute => this.isDirty(attribute as keyof this))
+      return some(attributes, attribute => this.isModified(attribute as keyof this))
     }
 
     const type = this.schema[attribute as any]
@@ -241,302 +224,7 @@ export default class Model {
 
   public getDirtyAttributes() {
     return Object.keys(this.schema)
-      .filter(attr => this.isDirty(attr as any)) as Array<string>
-  }
-
-  //------
-  // Querying & loading
-
-  /**
-   * Builds a query for this model.
-   */
-  public static query<M extends Model>(this: ModelClass<M>, options: QueryOptions = {}): Query<M> {
-    return new Query(this, options)
-  }
-
-  /**
-   * Counts the number of models of this type.
-   *
-   * @param query An optional query object.
-   */
-  public static async count<M extends Model>(this: ModelClass<M>, query: Record<string, any> = {}): Promise<number> {
-    return await this.query().filter(query).count()
-  }
-
-  /**
-   * Retrieves a model from the database by its ID.
-   *
-   * @param id The ID of the model to retrieve.
-   */
-  public static async get<M extends Model>(this: ModelClass<M>, id: IDOf<M>): Promise<M | null> {
-    return await this.query().get(id)
-  }
-
-  /**
-   * Shortcut for `Model.query().filter({...})`.
-   */
-  public static filter<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Query<M> {
-    return this.query().filter(filters)
-  }
-
-  /**
-   * Retrieves the first model of this type in the database, satisfying some query.
-   *
-   * @param query The query object.
-   */
-  public static async findOne<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Promise<M | null> {
-    return await this.query().findOne(filters)
-  }
-
-  /**
-   * Builds a query by filtering  all models of this type with a simple query.
-   *
-   * @param query The query object.
-   */
-  public static async find<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Promise<M[]> {
-    return this.query().filter(filters).all()
-  }
-
-  public static async aggregate<M extends Model>(this: ModelClass<M>, pipeline: Record<string, any>[] = []): Promise<M[]> {
-    const all = await this.collection.aggregate(pipeline).toArray()
-    return await Promise.all(all.map(model => this.hydrate(model)))
-  }
-
-  /**
-   * Retrieves the first model of this type.
-   */
-  public static async first<M extends Model>(this: ModelClass<M>): Promise<M | null> {
-    return await this.query().first()
-  }
-
-  /**
-   * Retrieves the last model of this type.
-   */
-  public static async last<M extends Model>(this: ModelClass<M>): Promise<M | null> {
-    const count = await this.count()
-    if (count === 0) { return null }
-
-    const documents = await this.query().skip(count - 1).limit(1).all()
-    return documents[0]
-  }
-
-  /**
-   * Retrieves all models of this type.
-   */
-  public static async all<M extends Model>(this: ModelClass<M>): Promise<M[]> {
-    return await this.query().all()
-  }
-
-  /**
-   * Reloads this model from the database. If the model has no ID, this does nothing.
-   */
-  public async reload(): Promise<this | null> {
-    const {id} = this
-    if (id == null) { return null }
-
-    const document = await this.meta.collection.findOne({_id: id})
-    if (document == null) { return null }
-
-    await this.hydrate(document)
-    return this
-  }
-
-  public static async create<M extends Model>(
-    this: ModelClass<M>,
-    attributes: Record<string, any> = {}
-  ) {
-    const model = new this(attributes)
-    await model.save()
-    return model
-  }
-
-  /**
-   * Finds or creates a model.
-   *
-   * @param required
-   * 	 The attributes to filter by and the use when creating.
-   * @param extra
-   *   Extra arguments that are stored when the model is created. If the model already existed, these
-   *   values are ignored.
-   */
-  public static async ensure<M extends Model>(
-    this: ModelClass<M>,
-    required: Record<string, any>,
-    defaults: Record<string, any> | ((model: M) => any) = {},
-    updates:  Record<string, any> | ((model: M) => any) = {},
-    options:  SaveOptions = {}
-  ): Promise<M> {
-    let model = await this.findOne(required)
-    if (model == null) {
-      model = new this({...required})
-
-      if (isFunction(defaults)) {
-        await defaults(model)
-      } else {
-        model.assign(defaults)
-
-        if (defaults.id != null) {
-          model.id = defaults.id
-        }
-      }
-    }
-
-    if (isFunction(updates)) {
-      model.recoerce()
-      await updates(model)
-    } else {
-      model.assign(updates)
-    }
-
-    await model.save(options)
-    return model
-  }
-
-  public async update(attributes: Record<string, any>) {
-    this.assign(attributes)
-    await this.save()
-  }
-
-  public static async update(filter: Record<string, any>, updates: Record<string, any>): Promise<UpdateResult | Document> {
-    return await this.query().filter(filter).update(updates)
-  }
-
-  //------
-  // Deletion
-
-  /**
-   * Deletes all models of this type.
-   * Note: does not perform pre-deletion checks or emit delete events.
-   */
-  public static async deleteAll(): Promise<DeleteResult> {
-    return await this.query().delete()
-  }
-
-  /**
-   * Deletes this model.
-   */
-  public async delete(): Promise<DeleteResult> {
-    await this.beforeDelete()
-
-    const integrity = new ReferentialIntegrity(this)
-    await integrity.processDeletion()
-
-    const result = await (this.constructor as typeof Model).filter({id: this.id}).delete()
-    if (result.deletedCount != null && result.deletedCount > 0) {
-      emitDelete(this)
-      await this.afterDelete()
-    }
-
-    return result
-  }
-
-  //------
-  // Saving
-
-  public async save(options: SaveOptions = {}) {
-    if (options.validate !== false) {
-      const result = await this.validate()
-      if (!result.isValid) {
-        throw new InvalidModelError(this.constructor as ModelClass<this>, result.serialize())
-      }
-    } else {
-      this.recoerce()
-    }
-
-    if (options.hooks !== false) {
-      await this.beforeSave(this.isNew)
-    }
-
-    await withClientStackTrace(async () => {
-      const now = new Date()
-      if (this.isNew) {
-        const document = await this.buildInsertionDocument(now)
-        await this.meta.collection.insertOne(document, {
-          bypassDocumentValidation: true,
-        })
-        this.updatedAt = now
-        this.createdAt = now
-      } else {
-        const filter = {_id: this.mongoID}
-        const update = await this.buildUpdate(now)
-        await this.meta.collection.updateOne(filter, update, {
-          bypassDocumentValidation: true,
-        })
-        this.updatedAt = now
-      }
-    })
-
-    if (this.isNew) {
-      emitCreate(this)
-    } else {
-      emitUpdate(this)
-    }
-
-    const wasNew = this.isNew
-    this.isNew = false
-
-    if (options.hooks !== false) {
-      await this.afterSave(wasNew)
-    }
-
-    // Update the originals so that the model is not seen as dirty anymore.
-    this.originals = cloneDeep(this.attributes) as Partial<this>
-  }
-
-  private async buildInsertionDocument(now: Date): Promise<Record<string, any>> {
-    await this.ensureID()
-
-    const data = this.escapeKeys(this.meta.serialize(this, false))
-    for (const name of this.meta.config.transient) {
-      delete data[name]
-    }
-
-    const referentialIntegrity = new ReferentialIntegrity(this)
-
-    const document: Record<string, any> = {
-      ...data,
-
-      _id:         this.mongoID,
-      _references: referentialIntegrity.collectReferences(),
-      updatedAt:   now,
-      createdAt:   now,
-    }
-
-    return document
-  }
-
-  private async buildUpdate(now: Date): Promise<Record<string, any>> {
-    const $set: Record<string, any> = {
-      updatedAt: now,
-    }
-
-    const serialized = this.escapeKeys(this.meta.serialize(this, false)) as any
-
-    for (const [name, value] of Object.entries(serialized)) {
-      if (!this.isDirty(name as any)) { continue }
-      if (this.meta.config.transient.includes(name)) { continue }
-      $set[name] = value
-    }
-    if (Object.keys($set).length === 0) { return {$set} }
-
-    const referentialIntegrity = new ReferentialIntegrity(this)
-    return {
-      $set: {
-        ...$set,
-        _references: referentialIntegrity.collectReferences(),
-      },
-    }
-  }
-
-  private escapeKeys(data: Record<string, any>) {
-    if (!this.meta.config.escapeKeys) { return data }
-
-    return deepMapKeys(data, key => {
-      return key.toString()
-        .replace(/\\/g, '\\\\')
-        .replace(/\./g, '\\u002e')
-        .replace(/\$/g, '\\u0024')
-    })
+      .filter(attr => this.isModified(attr as any)) as Array<string>
   }
 
   private unescapeKeys(data: Record<string, any>) {
@@ -550,89 +238,23 @@ export default class Model {
     })
   }
 
-  //------
-  // Change hooks
-
-  private async beforeValidate(isNew: boolean) {
-    return await callHook(this, 'beforeValidate', isNew)
-  }
-  private async beforeSave(isNew: boolean) {
-    return await callHook(this, 'beforeSave', isNew)
-  }
-  private async afterSave(isNew: boolean) {
-    return await callHook(this, 'afterSave', isNew)
-  }
-  private async beforeDelete() {
-    return await callHook(this, 'beforeDelete')
-  }
-  private async afterDelete() {
-    return await callHook(this, 'afterDelete')
-  }
+  // #endregion
 
   //------
-  // Validation
+  // Querying & loading
 
   /**
-   * Validates this model.
+   * Builds a query for this model.
    */
-  public async validate(): Promise<ValidatorResult<this>> {
-    this.recoerce()
-
-    if (await this.beforeValidate(this.isNew)) {
-      this.recoerce()
-    }
-
-    const validator = new Validator()
-    const result = await validator.validate(
-      this.attributes,
-      this.meta.modelType,
-      this.validateExtra.bind(this)
-    )
-
-    return result
+  public static query<M extends Model>(this: ModelClass<M>, options: QueryOptions = {}): Query<M> {
+    return new Query(this, options)
   }
 
-  protected async validateExtra(result: ValidatorResult<any>) {
-    for (const name of Object.keys(this.schema)) {
-      const {unique} = this.schema[name].options
-      if (!unique) { continue }
-
-      await this.validateUnique(name as keyof this, unique, result)
-    }
-  }
-
-  public async validateUnique(attribute: keyof this, unique: boolean | UniqueSpec, result: ValidatorResult<any>) {
-    if (!this.isDirty(attribute)) { return }
-
-    const spec = isPlainObject(unique) ? (unique as UniqueSpec) : {}
-    if (spec.if != null && !spec.if(this)) { return }
-
-    const serialized = this.serialize()
-    const value = serialized[attribute]
-    if (value == null) { return }
-
-    let query = new Query(this.constructor as ModelClass<any>)
-    query = query.filter({[attribute]: value})
-
-    // Use a scope if required.
-    if (spec.scope != null) {
-      for (const attribute of spec.scope) {
-        query = query.filter({[attribute]: serialized[attribute as keyof this]})
-      }
-    }
-    if (spec.query != null) {
-      query = spec.query(query, this)
-    }
-
-    // Exclude this model instance.
-    if (this.id != null) {
-      query = query.filter({id: {$ne: this.id}})
-    }
-
-    const count = await query.count()
-    if (count > 0) {
-      result.for(attribute as string).addError('unique', "This value is already taken")
-    }
+  /**
+   * Shortcut for `Model.query().filter({...})`.
+   */
+  public static filter<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Query<M> {
+    return this.query().filter(filters)
   }
 
 }

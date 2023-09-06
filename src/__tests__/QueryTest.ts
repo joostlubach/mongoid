@@ -1,4 +1,4 @@
-import { Model, ModelClass, Query } from '../'
+import { Model, ModelClass, Query } from '../backend'
 
 describe("Query", () => {
 

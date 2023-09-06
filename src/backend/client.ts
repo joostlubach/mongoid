@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { Db, MongoClient } from 'mongodb'
 import URL from 'url'
-import config from './config'
+import config from '../config'
 
 const stub = new Proxy({}, {
   get() {
@@ -12,14 +12,12 @@ const stub = new Proxy({}, {
 let CLIENT: MongoClient = stub as MongoClient
 let DB: Db = stub as Db
 
-function db(): Db {
+export function db(): Db {
   if (DB == null) {
     throw new Error("Not yet connected")
   }
   return DB
 }
-
-export default db
 
 export function getClient(): MongoClient {
   if (CLIENT == null) {

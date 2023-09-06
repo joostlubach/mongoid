@@ -1,25 +1,9 @@
-import chalk from 'chalk'
-import { cloneDeep, mapKeys, omit } from 'lodash'
-import {
-  CollationOptions,
-  Collection,
-  CountOptions,
-  Document,
-  FindCursor as MongoCursor,
-  UpdateResult,
-} from 'mongodb'
+import { cloneDeep, omit } from 'lodash'
+import { CollationOptions } from 'mongodb'
 import { sparse } from 'ytil'
-import AggregationPipeline from './AggregationPipeline'
-import { emitDelete } from './changes'
-import db from './client'
-import config from './config'
-import Cursor from './Cursor'
+import AggregationPipeline from './aggregation/AggregationPipeline'
 import Model from './Model'
-import { ID, ModelClass } from './typings'
-import { withClientStackTrace } from './util'
-
-export type Filter = Record<string, any>
-export type Sort = Record<string, 1 | -1>
+import { Filter, ModelClass, Sort } from './typings'
 
 export interface QueryOptions {
   collection?: string
@@ -30,13 +14,10 @@ export default class Query<M extends Model> {
   //------
   // Construction & properties
 
-  constructor(Model: ModelClass<M>, options: QueryOptions = {}) {
-    this.options = options
-    this.Model   = Model
-  }
-
-  public readonly Model: ModelClass<M>
-  private readonly options: QueryOptions
+  constructor(
+    public readonly Model: ModelClass<M>,
+    public readonly options: QueryOptions = {}
+  ) {}
 
   public copy(): Query<M> {
     const copy = new Query<M>(this.Model, {...this.options})
@@ -52,14 +33,6 @@ export default class Query<M extends Model> {
     const copy = this.copy()
     copy.options.collection = collectionName
     return copy
-  }
-
-  public get collection(): Collection {
-    if (this.options.collection != null) {
-      return db().collection(this.options.collection)
-    } else {
-      return this.Model.meta.collection
-    }
   }
 
   public filters:     Filter[] = []
@@ -188,7 +161,7 @@ export default class Query<M extends Model> {
   // Pipeline conversion
 
   public toPipeline(): AggregationPipeline<M> {
-    const pipeline = new AggregationPipeline(this.Model)
+    const pipeline = new AggregationPipeline<M>(this.Model)
 
     if (Object.keys(this.compoundFilters).length > 0) {
       pipeline.match(this.compoundFilters)
@@ -203,194 +176,6 @@ export default class Query<M extends Model> {
       pipeline.limit(this.limitCount)
     }
     return pipeline
-  }
-
-  //------
-  // Data retrieval
-
-  public async count(options: CountOptions = {}): Promise<number> {
-    if (config.traceEnabled) {
-      this.trace('CNT')
-    }
-    return await this.collection.countDocuments(this.compoundFilters, options)
-  }
-
-  public async total(options: CountOptions = {}): Promise<number> {
-    return await this.skip(null).limit(null).count(options)
-  }
-
-  public async get(id: ID): Promise<M | null> {
-    if (id == null) {
-      throw new TypeError("ID must be specified")
-    }
-
-    const mongoID = this.Model.meta.idToMongo(id)
-    return await this.findOne({id: mongoID})
-  }
-
-  public async all(): Promise<M[]> {
-    return await withClientStackTrace(
-      () => this.run().toArray()
-    )
-  }
-
-  public async first(): Promise<M | null> {
-    const documents = await this.limit(1).all()
-    return documents[0] ?? null
-  }
-
-  public async findOne(filters?: Record<string, any>): Promise<M | null> {
-    return await this.filter(filters || {}).first()
-  }
-
-  public async forEach(iterator: (model: M) => any) {
-    return await withClientStackTrace(async () => {
-      await this.run().forEach(iterator)
-    })
-  }
-
-  public async map<T>(iterator: (model: M, index: number) => T | Promise<T>): Promise<T[]> {
-    return await withClientStackTrace(async () => {
-      const results: T[] = []
-      let index = 0
-      await this.run().forEach(async model => {
-        results.push(await iterator(model, index++))
-      })
-      return results
-    })
-  }
-
-  public async pluck<T = any>(property: string): Promise<T[]>
-  public async pluck<T = any>(firstProperty: string, ...properties: string[]): Promise<Array<{[property: string]: T}>>
-  public async pluck(...properties: string[]) {
-    return await withClientStackTrace(async () => {
-      const project = properties.reduce((project, prop) => ({
-        ...project,
-        [prop === 'id' ? '_id' : prop]: 1,
-      }), {})
-
-      const values: any[] = []
-      await this.raw({project}).forEach(doc => {
-        const get = (prop: string) => doc[prop === 'id' ? '_id' : prop]
-        if (properties.length === 1) {
-          values.push(get(properties[0]))
-        } else {
-          values.push(properties.reduce((result, prop) => ({...result, [prop]: get(prop)}), {}))
-        }
-      })
-      return values
-    })
-  }
-
-  /**
-   * Runs this query and returns a cursor returning model instances.
-   */
-  public run(options: RunOptions = {}): Cursor<M> {
-    const {include, ...rest} = options
-    return new Cursor(this, this.raw(rest), {include})
-  }
-
-  /**
-   * Explains this query (calls `.explain()` on the underlying cursor).
-   */
-  public async explain() {
-    return await withClientStackTrace(
-      () => this.raw().explain()
-    )
-  }
-
-  /**
-   * Runs the query and retrieves a raw MongoDB cursor.
-   */
-  public raw(options: RunOptions = {}): MongoCursor {
-    const {
-      project = serializeProjections(this.projections),
-      trace   = config.traceEnabled,
-      label,
-    } = options
-
-    let cursor = this.collection
-      .find(this.compoundFilters)
-
-    if (this.collation != null) {
-      cursor = cursor.collation(this.collation)
-    }
-
-    if (project != null) {
-      cursor = cursor.project(project)
-    }
-
-    for (const sort of this.sorts) {
-      cursor = cursor.sort(sort)
-    }
-
-    if (this.skipCount != null) {
-      cursor = cursor.skip(this.skipCount)
-    }
-    if (this.limitCount != null) {
-      cursor = cursor.limit(this.limitCount)
-    }
-
-    if (trace) {
-      this.trace(label)
-    }
-
-    return cursor
-  }
-
-  public toRawArray() {
-    return withClientStackTrace(() => this.raw().toArray())
-  }
-
-  private trace(label: string = 'QRY') {
-    // Find out the origin.
-    const stackTarget = {} as {stack: string}
-    Error.captureStackTrace(stackTarget)
-
-    let source: string | null = null
-    for (const site of stackTarget.stack.split('\n').slice(1)) {
-      if (site.includes('mongoid')) { continue }
-      source = site.trim()
-      break
-    }
-
-    const parts = sparse([
-      chalk.magenta(label),
-      chalk.bold(this.Model.name + (this.options.collection ? ` (${this.options.collection})` : '')),
-      chalk.blue(`[${this.skipCount ?? 0} - ${this.limitCount == null ? '∞' : (this.skipCount ?? 0) + this.limitCount}]`),
-      chalk.dim(JSON.stringify(this.filters)),
-      source != null ? chalk.dim.underline(source) : null,
-    ])
-    config.logger.debug(parts.join(' '))
-  }
-
-  //------
-  // Updates
-
-  /**
-   * Updates matching documents with new values.
-   *
-   * @param updates The updates.
-   */
-  public async update(updates: Record<string, any>): Promise<UpdateResult | Document> {
-    return await withClientStackTrace(
-      () => this.collection.updateMany(this.compoundFilters, updates)
-    )
-  }
-
-  /**
-   * Deletes matching documents.
-   */
-  public async delete(triggerChange = true) {
-    if (triggerChange) {
-      this.filter(this.compoundFilters).forEach(model => {
-        emitDelete(model)
-      })
-    }
-
-    return await withClientStackTrace(
-      () => this.collection.deleteMany(this.compoundFilters)
-    )
   }
 
   //-------
@@ -415,11 +200,6 @@ export default class Query<M extends Model> {
 
 }
 
-function serializeProjections(projections: Record<string, any> | null) {
-  if (projections == null) { return null }
-  return mapKeys(projections, (val, key) => key === 'id' ? '_id' : key)
-}
-
 function removeUndefineds(filters: Record<string, any>) {
   const result: Record<string, any> = {}
   for (const [key, value] of Object.entries(filters)) {
@@ -437,11 +217,4 @@ export interface QueryRaw {
   limitCount:   number | null
   skipCount:    number | null
   collation:    CollationOptions | null
-}
-
-export interface RunOptions {
-  trace?:   boolean
-  label?:   string
-  project?: Record<string, any> | null
-  include?: string[]
 }
