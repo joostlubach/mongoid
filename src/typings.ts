@@ -1,5 +1,5 @@
 import { CreateIndexesOptions, Long, ObjectId } from 'mongodb'
-import { ObjectSchema, ObjectSchemaMap, SchemaInstance } from 'validator'
+import { ObjectSchema, ObjectSchemaMap, PolySchemaInstance, SchemaInstance } from 'validator'
 import AggregationPipeline from './aggregation/AggregationPipeline'
 import Meta from './Meta'
 import Model from './Model'
@@ -114,7 +114,14 @@ export interface UniqueSpec {
   if?:    (subject: any) => boolean
 }
 
-export function modelOf<S extends ObjectSchema>(schema: S): typeof Model & SchemaInstance<S> {
-  return Model as typeof Model & SchemaInstance<S>
+export type MonomorphicModelClassOf<S extends ObjectSchema> = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & SchemaInstance<S>)
+export type PolymorphicModelClassOf<SM extends ObjectSchemaMap> = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & PolySchemaInstance<SM>)
+
+export function MonoModel<S extends ObjectSchema>(schema: S): MonomorphicModelClassOf<S> {
+  return Model as MonomorphicModelClassOf<S>
+}
+
+export function PolyModel<SM extends ObjectSchemaMap>(schemas: SM): PolymorphicModelClassOf<SM> {
+  return Model as PolymorphicModelClassOf<SM>
 }
 

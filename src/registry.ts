@@ -1,4 +1,5 @@
 import { ObjectSchema, ObjectSchemaMap } from 'validator'
+import { TypedClassDecorator } from 'ytil'
 import Meta from './Meta'
 import Model from './Model'
 import { ConfigCommon, ModelClass, ModelConfig } from './typings'
@@ -36,8 +37,8 @@ export function getAllModelClasses() {
 }
 
 export function model<M extends Model>(name: string, options: ModelOptions): ClassDecorator {
-  return (Class: Function) => {
-    const ModelClass = Class as ModelClass<M>
+  return Class => {
+    const ModelClass = Class as any as ModelClass<M>
     if (!(ModelClass.prototype instanceof Model)) {
       throw new Error(`Model class \`${Class.name}\` cannot be registered as a model class as it does not derive from Model`)
     }

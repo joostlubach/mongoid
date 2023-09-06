@@ -9,7 +9,7 @@ import InvalidModelError from '../InvalidModelError'
 import Model from '../Model'
 import Query from '../Query'
 import { Ref } from '../types/ref'
-import { ModelClass, SaveOptions, UniqueSpec } from '../typings'
+import { IDOf, ModelClass, SaveOptions, UniqueSpec } from '../typings'
 import { deepMapKeys, indexName, withClientStackTrace } from '../util'
 import { db } from './client'
 import QueryExecutor from './QueryExecutor'
@@ -89,9 +89,9 @@ export default class ModelBackend<M extends Model> {
 
   private refCache = new WeakMap<Ref<any>, Model | null>()
 
-  public async getRef<M2 extends Model>(ref: Ref<M2>, useCache: boolean = true) {
+  public async getRef<M2 extends Model>(ref: Ref<M2>, useCache: boolean = true): Promise<M2 | null> {
     if (useCache && this.refCache.has(ref)) {
-      return this.refCache.get(ref)
+      return this.refCache.get(ref) as M2 | null
     }
 
     const backend = this.cloneFor(ref.Model)
@@ -100,12 +100,12 @@ export default class ModelBackend<M extends Model> {
     return model
   }
 
-  public async getAllRefs<M2 extends Model>(refs: Ref<M2>[], useCache: boolean = true) {
+  public async getAllRefs<M2 extends Model>(refs: Ref<M2>[], useCache: boolean = true): Promise<M2[]> {
     const promises = refs.map(it => this.getRef(it, useCache))
-    return await Promise.all(promises)
+    return await Promise.all(promises) as M2[]
   }
 
-  public async getRefMap<M2 extends Model>(refs: Ref<M2>[], useCache: boolean = true) {
+  public async getRefMap<M2 extends Model>(refs: Ref<M2>[], useCache: boolean = true): Promise<Map<IDOf<M2>, M2>> {
     const models = await this.getAllRefs(refs, useCache)
     return MapBuilder.by(sparse(models), it => it.id)
   }

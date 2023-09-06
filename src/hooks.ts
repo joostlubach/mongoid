@@ -80,7 +80,7 @@ export function resolveHooks<M extends Model>(Model: ModelClass<M>, name: HookNa
 }
 
 // Decorator
-export function hook<H extends HookName>(name: H): TypedMethodDecorator<HookFn<any, H>> {
+export function hook<H extends HookName, F extends HookFn<any, H>>(name: H): TypedMethodDecorator<F> {
   return (target, key, descriptor) => {
     if (descriptor.value == null) { return }
     if (!(target instanceof Model)) {
