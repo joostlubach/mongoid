@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "declaration": true,
-    "declarationMap": true,
+    "sourceMap": true,
     "useDefineForClassFields": true,
     "allowJs": false,
     "skipLibCheck": true,
