@@ -21,4 +21,12 @@
   "include": [
     "src"
   ],
+  "references": [
+    {
+      "path": "../validator/tsconfig.json"
+    },
+    {
+      "path": "../ytil/tsconfig.json"
+    }
+  ]
 }
