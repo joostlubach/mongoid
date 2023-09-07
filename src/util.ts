@@ -1,5 +1,7 @@
 import { isArray, isPlainObject } from 'lodash'
+import { objectEntries, objectValues } from 'ytil'
 import config from './config'
+import { Index } from './typings'
 
 export async function withClientStackTrace<T>(fn: () => PromiseLike<T> | T): Promise<T> {
   if (!config.clientStackTraces) {
@@ -33,9 +35,10 @@ export function deepMapKeys(arg: any, fn: (key: string | symbol) => any): any {
   }
 }
 
-export function indexName(keys: {[key: string]: number | 'text'}, options: {name?: string}) {
+export function indexName(index: Index, options: {name?: string}) {
   if (options.name) { return options.name }
-  if (Object.values(keys).includes('text')) { return 'text' }
+  if (objectValues(index).includes('text')) { return 'text' }
 
-  return Object.keys(keys).map(key => `${key}_${keys[key]}`).join('_')
+  const definedKeys = objectEntries(index).filter(it => it[1] !== undefined).map(it => it[0])
+  return definedKeys.map(key => `${key}_${index[key]}`).join('_')
 }

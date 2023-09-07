@@ -152,8 +152,14 @@ export default class Model {
    * @param raw The attributes to assign.
    */
   public assign(raw: Record<string, any>) {
-    const coerced = this.coerce(raw, true)
-    Object.assign(this, coerced)
+    const {id, ...rest} = this.coerce(raw, true)
+    if (id !== undefined) {
+      this.id = id
+    }
+
+    if (Object.keys(rest).length > 0) {
+      Object.assign(this, rest)
+    }
   }
 
   /**

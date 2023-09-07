@@ -103,7 +103,7 @@ export default class ReferentialIntegrity<M extends Model> {
       if (type.name !== 'ref') { return }
       if (!(value instanceof Ref)) { return }
 
-      const options = type.options as RefOptions
+      const options = type.options as RefOptions<any, any>
       if (options.onDelete === 'ignore') { return }
 
       const strategy =

@@ -1,5 +1,4 @@
 import { ObjectSchema, ObjectSchemaMap } from 'validator'
-import { TypedClassDecorator } from 'ytil'
 import Meta from './Meta'
 import Model from './Model'
 import { ConfigCommon, ModelClass, ModelConfig } from './typings'

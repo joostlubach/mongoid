@@ -1,12 +1,12 @@
 import { isFunction, omit } from 'lodash'
-import { INVALID, Type, TypeOptions, ValidatorResult } from 'validator'
+import { INVALID, OptionalType, RequiredType, Type, TypeOptions, ValidatorResult } from 'validator'
 import { isPlainObject } from 'ytil'
 import { Reference } from '../backend/ReferentialIntegrity'
 import Model from '../Model'
 import { getModelClass } from '../registry'
 import { ID, IDOf, ModelClass } from '../typings'
 
-export interface Options<PM extends Model = any> {
+export interface RefOptions<TRef extends Model, TParent extends Model> extends TypeOptions<Ref<TRef, TParent>> {
   /** The name of the model for the ref */
   model: string
 
@@ -16,9 +16,9 @@ export interface Options<PM extends Model = any> {
   /**
    * The strategy to use when the referenced object is deleted.
    *
-   * Default: `'ignore'`.
+   * Default: `'unset'`.
    */
-  onDelete?: RefDeleteStrategy<PM>
+  onDelete?: RefDeleteStrategy<TParent>
 
   /**
    * Set to true to always include this ref when the containing model is loaded.
@@ -26,13 +26,9 @@ export interface Options<PM extends Model = any> {
   include?: RefInclude
 }
 
-export interface RefOptions<PM extends Model = any> {
-  foreignKey?:  string
-  onDelete?:    RefDeleteStrategy<PM>
-  include?:     RefInclude
-}
-
-export type RefDeleteStrategy<PM extends Model> =
+export type RefDeleteStrategy<TParent extends Model> =
+  /** Unset the reference (set to `null` for single ref, or remove from array in case of an array of refs). This is the default setting. */
+  | 'unset'
   /** Disallow the deletion. */
   | 'disallow'
   /** Ignore the reference. This will lead to an inconsistent referential integrity, but may be useful for logging purposes. */
@@ -41,35 +37,33 @@ export type RefDeleteStrategy<PM extends Model> =
   | 'cascade'
   /** Fast-delete the owning model. This will not perform additional referential integrity checks. */
   | 'delete'
-  /** Unset the reference (set to `null` for single ref, or remove from array in case of an array of refs). */
-  | 'unset'
   /** Set to specific value. */
   | {$set: ID}
   /** Custom. */
-  | CustomDeleteStrategy<PM>
+  | CustomDeleteStrategy<TParent>
 
-export type CustomDeleteStrategy<PM extends Model> = ((model: PM, reference: Reference) => boolean | Promise<boolean>)
+export type CustomDeleteStrategy<TParent extends Model> = ((model: TParent, reference: Reference) => boolean | Promise<boolean>)
 
 export const RefDeleteStrategy: {
   isSetStrategy: (strategy: RefDeleteStrategy<any>) => strategy is {$set: ID}
-  isCustomStrategy: <PM extends Model>(strategy: RefDeleteStrategy<PM>) => strategy is CustomDeleteStrategy<PM>
+  isCustomStrategy: <TParent extends Model>(strategy: RefDeleteStrategy<TParent>) => strategy is CustomDeleteStrategy<TParent>
 } = {
   isSetStrategy: (strategy: RefDeleteStrategy<any>): strategy is {$set: ID} => {
     return isPlainObject(strategy) && '$set' in strategy && ID.isID(strategy.$set)
   },
-  isCustomStrategy: <PM extends Model>(strategy: RefDeleteStrategy<PM>): strategy is CustomDeleteStrategy<PM> => {
+  isCustomStrategy: <TParent extends Model>(strategy: RefDeleteStrategy<TParent>): strategy is CustomDeleteStrategy<TParent> => {
     return isFunction(strategy)
   }
 }
 
-export default function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M>> & Options<PM> & {required: false}): Type<Ref<M>> & {options: {required: false}}
-export default function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M>> & Options<PM> & {required?: true}): Type<Ref<M>> & {options: {required: true}}
-export default function ref<M extends Model, PM extends Model = any>(options: TypeOptions<Ref<M>> & Options<PM>): Type<Ref<M>> {
+export default function ref<TRef extends Model, TParent extends Model = any>(options: RefOptions<TRef, TParent> & {required: false}): OptionalType<Ref<TRef, TParent>, RefOptions<TRef, TParent>>
+export default function ref<TRef extends Model, TParent extends Model = any>(options: RefOptions<TRef, TParent>): RequiredType<Ref<TRef, TParent>, RefOptions<TRef, TParent>>
+export default function ref(options: RefOptions<any, any>): Type<any> {
   return {
     name: 'ref',
     options,
 
-    coerce(value: any): Ref<M> | INVALID {
+    coerce(value: any): Ref<any, any> | INVALID {
       const Model = getModelClass(options.model)
       if (Model == null) {
         throw new ReferenceError(`Referenced model \`${options.model}\` does not exist`)
@@ -79,13 +73,10 @@ export default function ref<M extends Model, PM extends Model = any>(options: Ty
 
       const foreignKey = options.foreignKey || 'id'
 
-      const opts: Options<PM> = options
-      const refOptions: RefOptions<PM> = omit(opts, 'model')
-
       if (ID.isID(value)) {
-        return new Ref<M>(Model, value, refOptions)
+        return new Ref(Model, value, omit(options, 'model'))
       } else if (typeof value === 'object' && value != null && ID.isID(value[foreignKey])) {
-        return new Ref<M>(Model, value[foreignKey], refOptions)
+        return new Ref(Model, value[foreignKey], omit(options, 'model'))
       } else {
         return INVALID
       }
@@ -109,12 +100,12 @@ export default function ref<M extends Model, PM extends Model = any>(options: Ty
   }
 }
 
-export class Ref<M extends Model> {
+export class Ref<TRef extends Model, TParent extends Model = Model> {
 
   constructor(
-    public readonly Model: ModelClass<M>,
-    public readonly id: IDOf<M>,
-    options: RefOptions = {}
+    public readonly Model: ModelClass<TRef>,
+    public readonly id: IDOf<TRef>,
+    options: Omit<RefOptions<TRef, TParent>, 'model'> = {}
   ) {
     this.foreignKey = options.foreignKey ?? 'id'
     this.include    = options.include ?? 'auto'
@@ -123,11 +114,11 @@ export class Ref<M extends Model> {
   public readonly foreignKey: string
   public readonly include:    RefInclude
 
-  public static isRef(arg: any): arg is Ref<any> {
+  public static isRef<TRef extends Model, TParent extends Model>(arg: any): arg is Ref<TRef, TParent> {
     return arg instanceof Ref
   }
 
-  public equals(other: Ref<M>) {
+  public equals(other: Ref<TRef, TParent>) {
     if (other.Model !== this.Model) { return false }
     return other.id === this.id
   }

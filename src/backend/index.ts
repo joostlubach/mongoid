@@ -8,6 +8,6 @@ export { default as Meta } from '../Meta'
 export { default as ReferentialIntegrity, ReferentialIntegrityError, type Reference } from './ReferentialIntegrity'
 
 export * from './createIndex'
-export {  Ref, type Options as RefOptions  } from 'types/ref'
+export {  Ref, type RefOptions  } from 'types/ref'
 export {  PolymorphicRef  } from 'types/polymorphicRef'
 export {  isVirtual  } from 'types/virtual'
