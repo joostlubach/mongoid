@@ -15,17 +15,20 @@ export function getModelClass(name: string): ModelClass<any> {
 }
 
 export function getModelMeta<M extends Model>(nameOrModelClass: string | ModelClass<M>): Meta<M> {
-  const meta = REGISTRY.find(([Model]) => {
+  const meta = REGISTRY.find(([Model, meta]) => {
     if (typeof nameOrModelClass === 'string') {
-      return Model.modelName === nameOrModelClass
+      return meta.modelName === nameOrModelClass
     } else {
       return Model === nameOrModelClass
     }
   })?.[1]
 
   if (meta == null) {
-    const name = typeof nameOrModelClass === 'string' ? nameOrModelClass : nameOrModelClass.modelName
-    throw new Error(`Model \`${name}\` is not registered as a model class`)
+    if (typeof nameOrModelClass === 'string') {
+      throw new Error(`Model \`${nameOrModelClass}\` is not registered as a model class`)
+    } else {
+      throw new Error(`Model class \`${nameOrModelClass.name}\` is not registered as a model class`)
+    }
   }
 
   return meta

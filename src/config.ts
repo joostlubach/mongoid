@@ -1,10 +1,12 @@
 /* eslint-disable no-console */
 
 import { isFunction, merge } from 'lodash'
-import { ObjectId } from 'mongodb'
+import { ConnectOptions, ObjectId } from 'mongodb'
 import { IDGenerator } from './typings'
 
 export interface Config {
+  connect?: ConnectOptions
+
   /** A function that generates an ID for the model when it is created. */
   idGenerator: IDGenerator
 
@@ -32,6 +34,7 @@ export interface Logger {
 }
 
 const config: Config = {
+  connect:        {},
   idGenerator:    () => new ObjectId(),
   timestamps:     true,
   cachingEnabled: true,

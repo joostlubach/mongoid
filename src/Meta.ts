@@ -1,10 +1,10 @@
 import { pluralize } from 'inflected'
 import { snakeCase } from 'lodash'
 import { ObjectId } from 'mongodb'
-import { isVirtual } from 'types/virtual'
 import { ObjectSchema, Type } from 'validator'
 import { object } from 'validator/types'
 import Model from './Model'
+import { isVirtual } from './types/virtual'
 import { ID, Index, ModelClass, ModelConfig } from './typings'
 
 export default class Meta<M extends Model> {

@@ -87,6 +87,6 @@ export function hook<H extends HookName, F extends HookFn<any, H>>(name: H): Typ
       throw new Error(`@hook() can only be used on methods of a Model`)
     }
 
-    registerHook(target.meta.Model, name, descriptor.value)
+    registerHook(target.ModelClass, name, descriptor.value)
   }
 }

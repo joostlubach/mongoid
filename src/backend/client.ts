@@ -27,9 +27,7 @@ export function getClient(): MongoClient {
 }
 
 export async function connect(uri: string) {
-  const client = await (MongoClient as any).connect(uri, {
-    useUnifiedTopology: true,
-  })
+  const client = await MongoClient.connect(uri, config.connect)
 
   const url = URL.parse(uri)
   const dbName = url.pathname?.slice(1)
