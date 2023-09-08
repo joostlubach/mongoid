@@ -12,6 +12,7 @@ import { sparse } from 'ytil'
 import config from '../config'
 import Model from '../Model'
 import Query from '../Query'
+import { getModelMeta } from '../registry'
 import { ID } from '../typings'
 import { withClientStackTrace } from '../util'
 import Cursor, { CursorOptions } from './Cursor'
@@ -67,7 +68,8 @@ export default class QueryExecutor<M extends Model> {
       throw new TypeError("ID must be specified")
     }
 
-    const mongoID = this.Model.meta.idToMongo(id)
+    const meta = getModelMeta(this.Model)
+    const mongoID = meta.idToMongo(id)
     const cursor = this.runQuery(this.query.filter({id: mongoID}).limit(1))
     return await cursor.next()
   }

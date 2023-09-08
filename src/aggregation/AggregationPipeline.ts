@@ -1,5 +1,6 @@
-import { omitBy } from 'lodash'
+import { omit, omitBy } from 'lodash'
 import Model from '../Model'
+import { getModelMeta } from '../registry'
 import { ModelClass } from '../typings'
 import {
   AccumulatorSpec,
@@ -27,7 +28,7 @@ export default class AggregationPipeline<M extends Model> {
       this.collectionName = ModelOrCollectionName
     } else {
       this.Model          = ModelOrCollectionName
-      this.collectionName = this.Model.meta.collectionName
+      this.collectionName = getModelMeta(this.Model).collectionName
     }
   }
 
@@ -90,14 +91,15 @@ export default class AggregationPipeline<M extends Model> {
       return this.addStage({$lookup})
     }
 
+    const fromCollection = getModelMeta($lookup.from).collectionName
+
     // Check for simple lookups using localField & foreignField.
     if ('localField' in $lookup) {
-      const {from, ...rest} = $lookup
       return this.addStage({
         $lookup: {
-          from:         from.meta.collectionName,
+          from:         fromCollection,
           foreignField: '_id',
-          ...rest,
+          ...omit($lookup, 'from'),
         },
       })
     }
@@ -113,9 +115,9 @@ export default class AggregationPipeline<M extends Model> {
     const pipeline = initialPipeline ?? new AggregationPipeline(from, stages)
     this.addStage({
       $lookup: {
-        from:     from.meta.collectionName,
+        from:     fromCollection,
         pipeline: pipeline,
-        ...rest,
+        ...rest
       },
     })
 

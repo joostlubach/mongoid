@@ -4,6 +4,7 @@ import { AggregationCursor as MongoAggregationCursor, Collection } from 'mongodb
 import AggregationPipeline from '../aggregation/AggregationPipeline'
 import config from '../config'
 import Model from '../Model'
+import { getModelMeta } from '../registry'
 import { withClientStackTrace } from '../util'
 import { db } from './client'
 import Cursor, { CursorOptions } from './Cursor'
@@ -19,6 +20,11 @@ export default class Aggregation<M extends Model> {
   }
 
   private readonly collection: Collection
+
+  private get meta() {
+    if (this.pipeline.Model == null) { return null }
+    return getModelMeta(this.pipeline.Model)
+  }
 
   //------
   // Data retrieval
@@ -62,7 +68,7 @@ export default class Aggregation<M extends Model> {
 
       let rows = await this.toRawArray()
       rows = rows.map(row => ({
-        id: this.pipeline.Model?.meta.idFromMongo(row._id) ?? row._id,
+        id: this.meta?.idFromMongo(row._id) ?? row._id,
         ...omit(row, '_id'),
       }))
 

@@ -48,7 +48,6 @@ export type PolyModelConfig<SM extends ObjectSchemaMap> = ConfigCommon & {
 export interface ModelClass<M extends Model> extends Omit<typeof Model, 'new' | 'meta' | 'prototype'> {
   new (attributes?: Record<string, any>): M
   prototype: M
-  meta: Meta<M>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

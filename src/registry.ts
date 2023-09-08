@@ -55,7 +55,7 @@ export function model<M extends Model>(name: string, options: ModelOptions): Cla
     } as ModelConfig
 
     const meta = new Meta(ModelClass, config)
-    REGISTRY.push([Model, meta])
+    REGISTRY.push([ModelClass, meta])
   }
 }
 

@@ -45,7 +45,7 @@ export default class Model {
   }
 
   public get meta() {
-    return this.ModelClass.meta
+    return getModelMeta(this.ModelClass)
   }
 
   public static get modelName() {

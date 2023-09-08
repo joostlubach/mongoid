@@ -8,6 +8,7 @@ import { callHook } from '../hooks'
 import InvalidModelError from '../InvalidModelError'
 import Model from '../Model'
 import Query from '../Query'
+import { getModelMeta } from '../registry'
 import { Ref } from '../types/ref'
 import { IDOf, ModelClass, SaveOptions, UniqueSpec } from '../typings'
 import { deepMapKeys, indexName, withClientStackTrace } from '../util'
@@ -28,11 +29,11 @@ export default class ModelBackend<M extends Model> {
   // #region Meta
 
   public get meta() {
-    return this.Model.meta
+    return getModelMeta(this.Model)
   }
 
   public get collection(): Collection {
-    return db().collection(this.Model.meta.collectionName)
+    return db().collection(this.meta.collectionName)
   }
 
   // #endregion
