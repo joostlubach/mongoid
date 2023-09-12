@@ -7,9 +7,9 @@
   "scripts": {
     "build": "(pnpm build:prepare && pnpm build:tsc && pnpm build:tsc-alias && pnpm build:copy && pnpm build:rsync); pnpm build:cleanup",
     "build:prepare": "test -x .build && rm -rf .build; mkdir -p .build",
-    "build:tsc": "tsc -p tsconfig.prod.json --outDir .build",
-    "build:tsc-alias": "tsc-alias -p tsconfig.prod.json --outDir .build",
-    "build:copy": "copyfiles -u 1 src/**/*.yml src/**/*.css .build",
+    "build:tsc": "tsc -p tsconfig.prod.json --outDir .build/cjs && tsc -p tsconfig.prod.json --module ESNext --outDir .build/esm",
+    "build:tsc-alias": "tsc-alias -p tsconfig.prod.json --outDir .build/cjs && tsc-alias -p tsconfig.prod.json --outDir .build/cjs",
+    "build:copy": "copyfiles -u 1 src/**/*.yml src/**/*.css .build/cjs && copyfiles -u 1 src/**/*.yml src/**/*.css .build/esm",
     "build:rsync": "rsync -uvaz --delete .build/ dist/",
     "build:cleanup": "rm -rf .build",
     "clean": "rimraf dist",
@@ -17,16 +17,34 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      },
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      }
     },
     "./backend": {
-      "types": "./dist/backend/index.d.ts",
-      "default": "./dist/backend/index.js"
+      "require": {
+        "types": "./dist/cjs/backend/index.d.ts",
+        "default": "./dist/cjs/backend/index.js"
+      },
+      "import": {
+        "types": "./dist/esm/backend/index.d.ts",
+        "default": "./dist/esm/backend/index.js"
+      }
     },
     "./types": {
-      "types": "./dist/types/index.d.ts",
-      "default": "./dist/types/index.js"
+      "require": {
+        "types": "./dist/cjs/types/index.d.ts",
+        "default": "./dist/cjs/types/index.js"
+      },
+      "import": {
+        "types": "./dist/esm/types/index.d.ts",
+        "default": "./dist/esm/types/index.js"
+      }
     }
   },
   "dependencies": {
@@ -45,6 +63,6 @@
     "rimraf": "^5.0.1",
     "ts-jest": "^29.0.3",
     "tsc-alias": "^1.8.7",
-    "typescript": "^5.2.2"
+    "typescript": "^5.1.6"
   }
 }
