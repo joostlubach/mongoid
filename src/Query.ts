@@ -43,15 +43,6 @@ export default class Query<M extends Model> {
   public collation:   CollationOptions | null = null
 
   /**
-   * Gets all filters as a `{$and: [...]}` compound. If there are duplicate keys, e.g. two `$or`-keys, this will
-   * make sure all filters end up in the Mongo DB query.
-   */
-  public get compoundFilters(): Record<string, any> {
-    if (this.filters.length === 0) { return {} }
-    return {$and: this.filters}
-  }
-
-  /**
    * Flattens all filters to a single object. Duplicate keys will be overwritten.
    */
   public get flattenedFilters(): Record<string, any> {
@@ -163,8 +154,8 @@ export default class Query<M extends Model> {
   public toPipeline(): AggregationPipeline<M> {
     const pipeline = new AggregationPipeline<M>(this.Model)
 
-    if (Object.keys(this.compoundFilters).length > 0) {
-      pipeline.match(this.compoundFilters)
+    if (this.filters.length > 0) {
+      pipeline.match({$and: this.filters})
     }
     for (const sort of this.sorts) {
       pipeline.sort(sort)
@@ -183,16 +174,22 @@ export default class Query<M extends Model> {
 
   public serialize(): QueryRaw {
     return {
+      model:       this.Model.name,
       filters:     this.filters,
       sorts:       this.sorts,
       projections: this.projections,
       skipCount:   this.skipCount,
       limitCount:  this.limitCount,
-      collation:   this.collation
+      collation:   this.collation,
+      options:     this.options
     }
   }
 
-  public static deserialize<M extends Model = any>(Model: ModelClass<M>, raw: Record<string, any>): Query<M> {
+  public static deserialize<M extends Model = any>(Model: ModelClass<M>, raw: QueryRaw): Query<M> {
+    if (Model.name !== raw.model) {
+      throw new Error("Cannot deserialize query for a different model")
+    }
+
     const query = new Query(Model)
     Object.assign(query, raw)
     return query
@@ -211,10 +208,12 @@ function removeUndefineds(filters: Record<string, any>) {
 }
 
 export interface QueryRaw {
+  model:        string
   filters:      Filter[]
   sorts:        Sort[]
   projections:  Record<string, string | number> | null
   limitCount:   number | null
   skipCount:    number | null
   collation:    CollationOptions | null
+  options:      QueryOptions
 }

@@ -33,6 +33,11 @@ export default class QueryExecutor<M extends Model> {
     return this.backend.collection
   }
 
+  private get filters() {
+    if (this.query.filters.length === 0) { return {} }
+    return {$and: this.query.filters}
+  }
+
   // #region Counting
 
   public async count(options: CountOptions = {}): Promise<number> {
@@ -52,7 +57,7 @@ export default class QueryExecutor<M extends Model> {
       countDocumentsOptions.limit = this.query.limitCount ?? undefined
     }
 
-    return await this.collection.countDocuments(this.query.compoundFilters, countDocumentsOptions)
+    return await this.collection.countDocuments(this.filters, countDocumentsOptions)
   }
 
   public async total(options: Omit<CountOptions, 'skip' | 'limit'> = {}): Promise<number> {
@@ -117,13 +122,13 @@ export default class QueryExecutor<M extends Model> {
 
   public async updateAll(updates: Record<string, any>): Promise<UpdateResult> {
     return await withClientStackTrace(
-      () => this.collection.updateMany(this.query.compoundFilters, updates)
+      () => this.collection.updateMany(this.filters, updates)
     )
   }
 
   public async deleteAll(): Promise<DeleteResult> {
     return await withClientStackTrace(
-      () => this.collection.deleteMany(this.query.compoundFilters)
+      () => this.collection.deleteMany(this.filters)
     )
   }
 
@@ -170,7 +175,7 @@ export default class QueryExecutor<M extends Model> {
       label,
     } = options
 
-    let cursor = this.collection.find(query.compoundFilters)
+    let cursor = this.collection.find(this.filters)
     if (query.collation != null) {
       cursor = cursor.collation(query.collation)
     }
@@ -214,7 +219,7 @@ export default class QueryExecutor<M extends Model> {
 
     const parts = sparse([
       chalk.magenta(label),
-      chalk.bold(query.Model.name + (query.options.collection ? ` (${query.options.collection})` : '')),
+      chalk.bold(this.Model.name + (query.options.collection ? ` (${query.options.collection})` : '')),
       chalk.blue(`[${query.skipCount ?? 0} - ${query.limitCount == null ? '∞' : (query.skipCount ?? 0) + query.limitCount}]`),
       chalk.dim(JSON.stringify(query.filters)),
       source != null ? chalk.dim.underline(source) : null,

@@ -98,3 +98,9 @@ export interface AccumulatorSpec<S, U = S, I extends any[] = [], A extends any[]
 
   lang?:      string
 }
+
+export interface AggregationPipelineRaw {
+  model?:     string
+  collection: string
+  stages:     Stage[]
+}

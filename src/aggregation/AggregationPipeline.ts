@@ -5,6 +5,7 @@ import { ModelClass } from '../typings'
 import {
   AccumulatorSpec,
   AddFieldsStage,
+  AggregationPipelineRaw,
   Expression,
   LimitStage,
   MatchStage,
@@ -40,11 +41,10 @@ export default class AggregationPipeline<M extends Model> {
     return this._facetName
   }
 
-  //------
-  // Stages
+  // #region Stages
 
   public stages() {
-    return this._stages
+    return [...this._stages]
   }
 
   /**
@@ -234,10 +234,11 @@ export default class AggregationPipeline<M extends Model> {
     }
   }
 
-  //------
-  // Stage resolution
+  // #endregion
 
-  public resolveStages(): any[] {
+  // #region Stage resolution
+
+  private resolveStages(): Stage[] {
     return this._stages.map(stage => {
       if ('$lookup' in stage && 'pipeline' in stage.$lookup) {
         const {pipeline, ...rest} = stage.$lookup as PipelineLookupConfig<any>
@@ -263,8 +264,9 @@ export default class AggregationPipeline<M extends Model> {
     })
   }
 
-  //------
-  // Accumulators
+  // #endregion
+
+  // #region Accumulators
 
   public static buildAccumulator<S, U = S>(spec: AccumulatorSpec<S, U, any[], any[]>): Record<string, any>
   public static buildAccumulator<S, I extends any[], A extends any[]>(spec: AccumulatorSpec<S, S, I, A>): Record<string, any>
@@ -283,5 +285,19 @@ export default class AggregationPipeline<M extends Model> {
       finalize:  spec.finalize?.toString(),
     }
   }
+
+  // #endregion
+
+  // #region Serialization
+
+  public serialize(): AggregationPipelineRaw {
+    return {
+      model:      this.Model?.name,
+      collection: this.collectionName,
+      stages:     this.resolveStages()
+    }
+  }
+
+  // #endregion
 
 }

@@ -1,7 +1,6 @@
 import { CreateIndexesOptions, Long, ObjectId } from 'mongodb'
 import { ObjectSchema, ObjectSchemaMap, PolySchemaInstance, SchemaInstance } from 'validator'
 import AggregationPipeline from './aggregation/AggregationPipeline'
-import Meta from './Meta'
 import Model from './Model'
 import Query from './Query'
 
@@ -119,3 +118,5 @@ export type PolymorphicModelClassOf<SM extends ObjectSchemaMap> = Omit<typeof Mo
 export function TypedModel<S extends ObjectSchema>(schema: S): MonomorphicModelClassOf<S>
 export function TypedModel<SM extends ObjectSchemaMap>(schemas: SM): PolymorphicModelClassOf<SM>
 export function TypedModel() { return Model }
+
+export { type Document } from 'mongodb'

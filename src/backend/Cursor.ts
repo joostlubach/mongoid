@@ -13,7 +13,7 @@ export default class Cursor<M extends Model> {
   ) {}
 
   private get Model() {
-    return this.backend.Model
+    return this.backend?.Model ?? null
   }
 
   public async *[Symbol.asyncIterator]() {

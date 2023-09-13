@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { omit, pick } from 'lodash'
-import { AggregationCursor as MongoAggregationCursor, Collection } from 'mongodb'
-import AggregationPipeline from '../aggregation/AggregationPipeline'
+import { AggregateOptions, AggregationCursor as MongoAggregationCursor, Collection } from 'mongodb'
+import { AggregationPipelineRaw } from '../aggregation'
 import config from '../config'
 import Model from '../Model'
 import { getModelMeta } from '../registry'
@@ -13,17 +13,21 @@ import ModelBackend from './ModelBackend'
 export default class Aggregation<M extends Model> {
 
   constructor(
-    private backend: ModelBackend<M>,
-    private pipeline: AggregationPipeline<M>
+    private backend: ModelBackend<M> | null,
+    private pipeline: AggregationPipelineRaw
   ) {
-    this.collection = db().collection(pipeline.collectionName)
+    this.collection = db().collection(pipeline.collection)
   }
 
   private readonly collection: Collection
 
+  private get Model() {
+    return this.backend?.Model ?? null
+  }
+
   private get meta() {
-    if (this.pipeline.Model == null) { return null }
-    return getModelMeta(this.pipeline.Model)
+    if (this.Model == null) { return null }
+    return getModelMeta(this.Model)
   }
 
   //------
@@ -34,7 +38,7 @@ export default class Aggregation<M extends Model> {
    */
   public countMatching(): Promise<number> {
     const filters: Record<string, any>[] = []
-    for (const stage of this.pipeline.stages()) {
+    for (const stage of this.pipeline.stages) {
       if (!('$match' in stage)) { continue }
       filters.push(stage.$match)
     }
@@ -84,11 +88,10 @@ export default class Aggregation<M extends Model> {
    * Runs this query and returns a cursor returning model instances.
    */
   public run(options: RunOptions = {}): Cursor<M> {
-    if (this.pipeline.Model == null) {
-      throw new Error("Cannot use .run() on a raw aggregation pipeline.")
+    if (this.backend == null) {
+      throw new Error('Cannot use `Aggregation#run()` on a raw aggregation pipeline.')
     }
-
-    return new Cursor(this.backend, this.raw())
+    return new Cursor(this.backend, this.raw(options))
   }
 
   /**
@@ -103,21 +106,20 @@ export default class Aggregation<M extends Model> {
   /**
    * Runs the query and retrieves a raw MongoDB cursor.
    */
-  public raw(): MongoAggregationCursor {
-    const stages = this.pipeline.resolveStages()
+  public raw(options: AggregateOptions = {}): MongoAggregationCursor {
     if (config.traceEnabled) {
-      config.logger.debug(chalk`AGG {bold ${this.pipeline.Model?.name ?? this.collection.collectionName}} {dim ${JSON.stringify(stages)}}`)
+      config.logger.debug(chalk`AGG {bold ${this.Model?.name ?? this.collection.collectionName}} {dim ${JSON.stringify(this.pipeline.stages)}}`)
     }
-    return this.collection.aggregate(stages)
+    return this.collection.aggregate(this.pipeline.stages, options)
   }
 
-  public toRawArray(): Promise<Record<string, any>[]> {
+  public toRawArray(options: AggregateOptions = {}): Promise<Record<string, any>[]> {
     return withClientStackTrace(() => {
-      const cursor = this.raw()
+      const cursor = this.raw(options)
       return cursor.toArray()
     })
   }
 
 }
 
-export interface RunOptions extends CursorOptions {}
+export interface RunOptions extends CursorOptions, AggregateOptions {}
