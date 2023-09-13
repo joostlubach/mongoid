@@ -3,6 +3,7 @@ import { CollationOptions } from 'mongodb'
 import { sparse } from 'ytil'
 import AggregationPipeline from './aggregation/AggregationPipeline'
 import Model from './Model'
+import { getModelClass } from './registry'
 import { Filter, ModelClass, Sort } from './typings'
 
 export interface QueryOptions {
@@ -185,11 +186,8 @@ export default class Query<M extends Model> {
     }
   }
 
-  public static deserialize<M extends Model = any>(Model: ModelClass<M>, raw: QueryRaw): Query<M> {
-    if (Model.name !== raw.model) {
-      throw new Error("Cannot deserialize query for a different model")
-    }
-
+  public static deserialize(raw: QueryRaw): Query<any> {
+    const Model = getModelClass(raw.model)
     const query = new Query(Model)
     Object.assign(query, raw)
     return query
