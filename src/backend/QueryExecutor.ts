@@ -15,7 +15,7 @@ import Query from '../Query'
 import { getModelMeta } from '../registry'
 import { ID } from '../typings'
 import { withClientStackTrace } from '../util'
-import Cursor, { CursorOptions } from './Cursor'
+import Cursor from './Cursor'
 import ModelBackend from './ModelBackend'
 
 export default class QueryExecutor<M extends Model> {
@@ -81,7 +81,7 @@ export default class QueryExecutor<M extends Model> {
 
   public async find(): Promise<M[]> {
     return await withClientStackTrace(
-      () => this.run(this.query).toArray()
+      () => this.runQuery(this.query).toArray()
     )
   }
 
@@ -104,14 +104,16 @@ export default class QueryExecutor<M extends Model> {
       }), {})
 
       const values: any[] = []
-      await this.raw(this.query.project(project)).forEach(doc => {
+      const cursor = this.runQueryRaw(this.query.project(project))
+
+      for await (const doc of cursor) {
         const get = (prop: string) => doc[prop === 'id' ? '_id' : prop]
         if (properties.length === 1) {
           values.push(get(properties[0]))
         } else {
           values.push(properties.reduce((result, prop) => ({...result, [prop]: get(prop)}), {}))
         }
-      })
+      }
       return values
     })
   }
@@ -139,13 +141,12 @@ export default class QueryExecutor<M extends Model> {
   /**
    * Runs this this.query and returns a cursor returning model instances.
    */
-  public run(options: RunOptions = {}): Cursor<M> {
-    return this.runQuery(this.query, options)
+  public run(): Cursor<M> {
+    return this.runQuery(this.query)
   }
 
-  private runQuery(query: Query<M>, options: RunOptions = {}) {
-    const {include, ...rest} = options
-    return new Cursor(this.backend, this.runQueryRaw(query, rest), {include})
+  private runQuery(query: Query<M>) {
+    return new Cursor(this.backend, this.runQueryRaw(query))
   }
 
   /**
@@ -164,23 +165,20 @@ export default class QueryExecutor<M extends Model> {
   /**
    * Runs the this.query and retrieves a raw MongoDB cursor.
    */
-  public raw(options: RunOptions = {}): MongoCursor {
+  public raw(options: RunQueryRawOptions = {}): MongoCursor {
     return this.runQueryRaw(this.query, options)
   }
 
-  private runQueryRaw(query: Query<M>, options: RunOptions): MongoCursor {
-    const {
-      project = serializeProjections(query.projections),
-      trace   = config.traceEnabled,
-      label,
-    } = options
+  private runQueryRaw(query: Query<M>, options: RunQueryRawOptions = {}): MongoCursor {
+    const {label} = options
 
     let cursor = this.collection.find(this.filters)
     if (query.collation != null) {
       cursor = cursor.collation(query.collation)
     }
-    if (project != null) {
-      cursor = cursor.project(project)
+    if (query.projections != null) {
+      const projections = serializeProjections(query.projections)
+      cursor = cursor.project(projections)
     }
     for (const sort of query.sorts) {
       cursor = cursor.sort(sort)
@@ -191,14 +189,14 @@ export default class QueryExecutor<M extends Model> {
     if (query.limitCount != null) {
       cursor = cursor.limit(query.limitCount)
     }
-    if (trace) {
+    if (config.traceEnabled) {
       this.trace(query, label)
     }
     return cursor
   }
 
   public rawArray(): Promise<Document[]> {
-    return withClientStackTrace(() => this.raw(this.query).toArray())
+    return withClientStackTrace(() => this.runQueryRaw(this.query).toArray())
   }
 
   // #endregion
@@ -232,8 +230,7 @@ export default class QueryExecutor<M extends Model> {
 
 }
 
-function serializeProjections(projections: Record<string, any> | null) {
-  if (projections == null) { return null }
+function serializeProjections(projections: Record<string, any>) {
   return mapKeys(projections, (val, key) => key === 'id' ? '_id' : key)
 }
 
@@ -242,8 +239,6 @@ export interface CountOptions extends AggregateOptions {
   limit?: number | null
 }
 
-export interface RunOptions extends CursorOptions {
-  trace?:   boolean
-  label?:   string
-  project?: Record<string, any> | null
+interface RunQueryRawOptions {
+  label?: string
 }

@@ -7,7 +7,7 @@ import Model from '../Model'
 import { getModelMeta } from '../registry'
 import { withClientStackTrace } from '../util'
 import { db } from './client'
-import Cursor, { CursorOptions } from './Cursor'
+import Cursor from './Cursor'
 import ModelBackend from './ModelBackend'
 
 export default class Aggregation<M extends Model> {
@@ -122,4 +122,4 @@ export default class Aggregation<M extends Model> {
 
 }
 
-export interface RunOptions extends CursorOptions, AggregateOptions {}
+export interface RunOptions extends AggregateOptions {}

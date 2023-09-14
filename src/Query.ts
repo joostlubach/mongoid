@@ -22,11 +22,12 @@ export default class Query<M extends Model> {
 
   public copy(): Query<M> {
     const copy = new Query<M>(this.Model, {...this.options})
-    copy.filters    = cloneDeep(this.filters)
-    copy.sorts      = cloneDeep(this.sorts)
-    copy.skipCount  = this.skipCount
-    copy.limitCount = this.limitCount
-    copy.collation  = this.collation
+    copy.filters     = cloneDeep(this.filters)
+    copy.sorts       = cloneDeep(this.sorts)
+    copy.projections = {...this.projections}
+    copy.skipCount   = this.skipCount
+    copy.limitCount  = this.limitCount
+    copy.collation   = this.collation
     return copy
   }
 
