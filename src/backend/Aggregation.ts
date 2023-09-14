@@ -1,22 +1,27 @@
 import chalk from 'chalk'
 import { omit, pick } from 'lodash'
-import { AggregateOptions, AggregationCursor as MongoAggregationCursor, Collection } from 'mongodb'
+import {
+  AggregateOptions,
+  AggregationCursor as MongoAggregationCursor,
+  Collection,
+  MongoClient,
+} from 'mongodb'
 import { AggregationPipelineRaw } from '../aggregation'
 import config from '../config'
 import Model from '../Model'
 import { getModelMeta } from '../registry'
 import { withClientStackTrace } from '../util'
-import { db } from './client'
 import Cursor from './Cursor'
 import ModelBackend from './ModelBackend'
 
 export default class Aggregation<M extends Model> {
 
   constructor(
+    private client: MongoClient,
     private backend: ModelBackend<M> | null,
     private pipeline: AggregationPipelineRaw
   ) {
-    this.collection = db().collection(pipeline.collection)
+    this.collection = client.db().collection(pipeline.collection)
   }
 
   private readonly collection: Collection

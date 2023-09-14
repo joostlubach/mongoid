@@ -4,7 +4,7 @@ export interface VirtualOptions {
   get?: (item: any) => any
 }
 
-export default function virtual(options: TypeOptions<any> & VirtualOptions = {}): Type<any, any> {
+export function virtual(options: TypeOptions<any> & VirtualOptions = {}): Type<any, any> {
   return {
     name: 'virtual',
     options: {

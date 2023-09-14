@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { isArray, isFunction, omitBy } from 'lodash'
-import { Collection, DeleteResult, Filter, UpdateFilter } from 'mongodb'
+import { Collection, DeleteResult, Filter, MongoClient, UpdateFilter } from 'mongodb'
 import Validator, { ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, objectEntries, sparse } from 'ytil'
 import config from '../config'
@@ -12,18 +12,18 @@ import { getModelMeta } from '../registry'
 import { Ref } from '../types/ref'
 import { IDOf, ModelClass, SaveOptions, UniqueSpec } from '../typings'
 import { deepMapKeys, indexName, withClientStackTrace } from '../util'
-import { db } from './client'
 import QueryExecutor from './QueryExecutor'
 import ReferentialIntegrity from './ReferentialIntegrity'
 
 export default class ModelBackend<M extends Model> {
 
   constructor(
+    public client: MongoClient,
     public readonly Model: ModelClass<M>,
   ) {}
 
   public cloneFor<M extends Model>(Model: ModelClass<M>) {
-    return new ModelBackend(Model)
+    return new ModelBackend(this.client, Model)
   }
 
   // #region Meta
@@ -33,7 +33,7 @@ export default class ModelBackend<M extends Model> {
   }
 
   public get collection(): Collection {
-    return db().collection(this.meta.collectionName)
+    return this.client.db().collection(this.meta.collectionName)
   }
 
   // #endregion
@@ -185,7 +185,7 @@ export default class ModelBackend<M extends Model> {
     if (options.validate !== false) {
       const result = await this.validate(model)
       if (!result.isValid) {
-        throw new InvalidModelError(this.constructor as ModelClass<M>, result.serialize())
+        throw new InvalidModelError(this.Model, result.serialize())
       }
     } else {
       model.recoerce()

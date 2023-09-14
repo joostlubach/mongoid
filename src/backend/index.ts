@@ -1,4 +1,4 @@
-export { db, getClient, connect, connected, disconnect } from './client'
+export { connect } from './client'
 export { default as config, type Config, configure } from '../config'
 export { hook, registerHook, getHooks } from '../hooks'
 
@@ -13,3 +13,5 @@ export * from './createIndex'
 export {  Ref, type RefOptions  } from 'types/ref'
 export {  PolymorphicRef  } from 'types/polymorphicRef'
 export {  isVirtual  } from 'types/virtual'
+
+export { type MongoClient } from 'mongodb'

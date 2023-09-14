@@ -9,9 +9,9 @@ export interface Options<PM extends Model = any> {
   onDelete?: RefDeleteStrategy<PM>
 }
 
-export default function polymorphicRef<PM extends Model = any>(options: TypeOptions<PolymorphicRef> & Options<PM> & {required: false}): Type<PolymorphicRef, Options<PM>> & {options: {required: false}}
-export default function polymorphicRef<PM extends Model = any>(options: TypeOptions<PolymorphicRef> & Options<PM> & {required?: true}): Type<PolymorphicRef, Options<PM>> & {options: {required: true}}
-export default function polymorphicRef<PM extends Model = any>(options: TypeOptions<PolymorphicRef> & Options<PM>): Type<any, any> {
+export function polymorphicRef<PM extends Model = any>(options: TypeOptions<PolymorphicRef> & Options<PM> & {required: false}): Type<PolymorphicRef, Options<PM>> & {options: {required: false}}
+export function polymorphicRef<PM extends Model = any>(options: TypeOptions<PolymorphicRef> & Options<PM> & {required?: true}): Type<PolymorphicRef, Options<PM>> & {options: {required: true}}
+export function polymorphicRef<PM extends Model = any>(options: TypeOptions<PolymorphicRef> & Options<PM>): Type<any, any> {
   return {
     name: 'polymorphicRef',
     options,
