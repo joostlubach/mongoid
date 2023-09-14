@@ -58,7 +58,7 @@ export const RefDeleteStrategy: {
 
 export default function ref<TRef extends Model, TParent extends Model = any>(options: RefOptions<TRef, TParent> & {required: false}): OptionalType<Ref<TRef, TParent>, RefOptions<TRef, TParent>>
 export default function ref<TRef extends Model, TParent extends Model = any>(options: RefOptions<TRef, TParent>): RequiredType<Ref<TRef, TParent>, RefOptions<TRef, TParent>>
-export default function ref(options: RefOptions<any, any>): Type<any> {
+export default function ref(options: RefOptions<any, any>): Type<any, any> {
   return {
     name: 'ref',
     options,

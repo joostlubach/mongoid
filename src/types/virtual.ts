@@ -1,10 +1,10 @@
 import { Type, TypeOptions } from 'validator'
 
-interface Options {
+export interface VirtualOptions {
   get?: (item: any) => any
 }
 
-export default function virtual(options: TypeOptions<any> & Options = {}): Type<any> {
+export default function virtual(options: TypeOptions<any> & VirtualOptions = {}): Type<any, any> {
   return {
     name: 'virtual',
     options: {
@@ -27,6 +27,6 @@ export default function virtual(options: TypeOptions<any> & Options = {}): Type<
   }
 }
 
-export function isVirtual(type: Type<any>): boolean {
+export function isVirtual(type: Type<any, any>): boolean {
   return !!type.options.virtual
 }

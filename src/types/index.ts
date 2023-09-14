@@ -1,4 +1,4 @@
 export * from 'validator/types'
-export { default as polymorphicRef } from './polymorphicRef'
-export { default as ref, type RefOptions } from './ref'
-export { default as virtual } from './virtual'
+export * from './polymorphicRef'
+export * from './ref'
+export * from './virtual'

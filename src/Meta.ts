@@ -86,7 +86,7 @@ export default class Meta<M extends Model> {
     }
   }
 
-  public get modelType(): Type<any> {
+  public get modelType(): Type<any, any> {
     if (this.config.polymorphic) {
       return object({
         required:    false,
@@ -101,8 +101,8 @@ export default class Meta<M extends Model> {
     }
   }
 
-  public findSchemaType(model: Model, path: string): Type<any> | null {
-    let found: Type<any> | null = null
+  public findSchemaType(model: Model, path: string): Type<any, any> | null {
+    let found: Type<any, any> | null = null
     this.modelType.traverse?.(model, [], (_, p, type) => {
       if (p === path) {
         found = type
