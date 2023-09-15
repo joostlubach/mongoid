@@ -1,11 +1,11 @@
 import { cloneDeep, isEqual, some } from 'lodash'
 import Validator, { INVALID } from 'validator'
+import { objectEntries } from 'ytil'
 import Meta from './Meta'
 import Query from './Query'
 import { getModelMeta } from './registry'
 import { isVirtual } from './types/virtual'
-import { ID, ModelClass } from './typings'
-import { deepMapKeys } from './util'
+import { ID, ModelClass, ModelRaw } from './typings'
 
 export default class Model {
 
@@ -24,7 +24,7 @@ export default class Model {
 
   public id:        ID = null!
 
-  public originals: Partial<this> | null = null
+  public originals: Record<string, any> | null = null
 
   public createdAt: Date | null = null
   public updatedAt: Date | null = null
@@ -92,13 +92,6 @@ export default class Model {
   }
 
   /**
-   * Serializes this model for sending over JSON.
-   */
-  public serialize(): Record<keyof this, any> {
-    return this.meta.serialize(this, true)
-  }
-
-  /**
    * Casts given attributes to the types specified in this model's schema. This is done automatically
    * in the {@link #assign} function.
    */
@@ -162,26 +155,54 @@ export default class Model {
     }
   }
 
+  // #endregion
+
+  // #region Serialization
+
   /**
-   * Hydrates this model from the database.
+   * Serializes this model for sending over JSON.
+   */
+  public serialize(includeVirtual: boolean = true): ModelRaw {
+    const attributes = this.meta.getAttributes(this, includeVirtual)
+    const serialized = this.meta.modelType.serialize(attributes)
+
+    if (includeVirtual) {
+      serialized.id = this.id
+      serialized.createdAt = this.createdAt
+      serialized.updatedAt = this.updatedAt
+    } else {
+      // Delete all virtual attributes.
+      const virtualKeys = objectEntries(this.schema)
+        .filter(it => isVirtual(it[1]))
+        .map(it => it[0])
+
+      virtualKeys.forEach(key => {
+        delete serialized[key]
+      })
+    }
+
+    return serialized
+  }
+
+  /**
+   * Deserializes this model from JSON. Similar to {@link #assign}, but also sets the ID and timestamps,
+   * and marks the model as "clean".
    *
    * @param attributes The attributes to hydrate with.
    */
-  public async hydrate(document: Record<string, any>) {
-    const {_id, type, ...raw} = this.unescapeKeys(document)
+  public async deserialize(raw: ModelRaw) {
+    const {id, updatedAt, createdAt, ...rest} = raw
 
-    const id = this.meta.idFromMongo(_id)
-    Object.assign(this, {id})
-
-    const coerced = this.coerce({type, ...raw}, false)
+    const coerced = this.coerce(rest, false)
     if (Object.keys(coerced).length === 0) { return }
 
     Object.assign(this, coerced)
-    this.originals = cloneDeep(coerced) as Partial<this>
+    this.markClean()
 
+    this.id        = id!
     this.isNew     = false
-    this.updatedAt = raw.updatedAt
-    this.createdAt = raw.createdAt
+    this.updatedAt = updatedAt
+    this.createdAt = createdAt
   }
 
   /**
@@ -189,9 +210,9 @@ export default class Model {
    *
    * @param attributes The attributes to hydrate with.
    */
-  public static async hydrate<M extends Model>(this: ModelClass<M>, document: Record<string, any>): Promise<M> {
+  public static async deserialize<M extends Model>(this: ModelClass<M>, raw: ModelRaw): Promise<M> {
     const model = new this()
-    await model.hydrate(document)
+    await model.deserialize(raw)
     return model
   }
 
@@ -201,12 +222,12 @@ export default class Model {
    *
    * @param attribute An attribute to check or leave out to check the entire model.
    */
-  public isModified(attribute?: keyof this): boolean {
+  public isModified(attribute?: string): boolean {
     if (this.originals == null) { return true }
 
     if (attribute === undefined) {
       const attributes = Object.keys(this.schema)
-      return some(attributes, attribute => this.isModified(attribute as keyof this))
+      return some(attributes, attribute => this.isModified(attribute))
     }
 
     const type = this.schema[attribute as any]
@@ -214,13 +235,15 @@ export default class Model {
       return false
     }
 
-    const originals = this.originals
-    if (this[attribute] == null) {
+    const originals  = this.originals
+    const attributes = this.attributes
+
+    if (attributes[attribute] == null) {
       return originals[attribute] != null
     } else if (originals[attribute] == null) {
-      return this[attribute] != null
+      return attributes[attribute] != null
     } else {
-      return !isEqual(this[attribute], originals[attribute])
+      return !isEqual(attributes[attribute], originals[attribute])
     }
   }
 
@@ -231,17 +254,6 @@ export default class Model {
   public getDirtyAttributes() {
     return Object.keys(this.schema)
       .filter(attr => this.isModified(attr as any)) as Array<string>
-  }
-
-  private unescapeKeys(data: Record<string, any>) {
-    if (!this.meta.config.escapeKeys) { return data }
-
-    return deepMapKeys(data, key => {
-      return key.toString()
-        .replace(/\\u0024/g, '$')
-        .replace(/\\u002e/g, '.')
-        .replace(/\\\\/g, '\\')
-    })
   }
 
   // #endregion

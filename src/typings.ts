@@ -106,4 +106,10 @@ export function TypedModel<S extends ObjectSchema>(schema: S): MonomorphicModelC
 export function TypedModel<SM extends ObjectSchemaMap>(schemas: SM): PolymorphicModelClassOf<SM>
 export function TypedModel() { return Model }
 
+export type ModelRaw = Record<string, any> & {
+  id:        ID | null
+  createdAt: Date
+  updatedAt: Date
+}
+
 export { type Document } from 'mongodb'

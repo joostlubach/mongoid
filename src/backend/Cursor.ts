@@ -15,13 +15,13 @@ export default class Cursor<M extends Model> {
 
   public async *[Symbol.asyncIterator]() {
     for await (const document of this.cursor) {
-      yield await this.Model.hydrate(document) as M
+      yield await this.backend.hydrate(document) as M
     }
   }
 
   public async map<U>(transform: (model: M) => U | Promise<U>): Promise<Promise<U>[]> {
     return await this.cursor.map(async document => {
-      const model = await this.Model.hydrate(document) as M
+      const model = await this.backend.hydrate(document) as M
       return await transform(model)
     }).toArray()
   }
@@ -34,12 +34,12 @@ export default class Cursor<M extends Model> {
     const document = await this.cursor.next()
     if (document == null) { return null }
 
-    return await this.Model.hydrate(document) as M
+    return await this.backend.hydrate(document) as M
   }
 
   public async toArray(): Promise<M[]> {
     const documents = await this.cursor.toArray()
-    const promises  = documents.map(doc => this.Model.hydrate(doc)) as Array<Promise<M>>
+    const promises  = documents.map(doc => this.backend.hydrate(doc))
     return await Promise.all(promises)
   }
 

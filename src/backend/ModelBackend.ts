@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { isArray, isFunction, omitBy } from 'lodash'
 import { Collection, DeleteResult, Filter, MongoClient, UpdateFilter } from 'mongodb'
-import Validator, { ValidatorResult } from 'validator'
+import Validator, { Type, ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, objectEntries, sparse } from 'ytil'
 import config from '../config'
 import { callHook } from '../hooks'
@@ -230,7 +230,7 @@ export default class ModelBackend<M extends Model> {
   private async buildInsertionDocument(model: M, now: Date): Promise<Record<string, any>> {
     await model.ensureID()
 
-    const data = this.escapeKeys(this.meta.serialize(model, false))
+    const data = this.escapeKeys(model.serialize(false))
     for (const name of this.meta.config.transient ?? []) {
       delete data[name]
     }
@@ -251,7 +251,7 @@ export default class ModelBackend<M extends Model> {
       updatedAt: now,
     }
 
-    const serialized = this.escapeKeys(this.meta.serialize(model, false)) as any
+    const serialized = this.escapeKeys(model.serialize(false))
     for (const [name, value] of Object.entries(serialized)) {
       if (!model.isModified(name as any)) { continue }
       if (this.meta.config.transient?.includes(name)) { continue }
@@ -268,16 +268,6 @@ export default class ModelBackend<M extends Model> {
         _references: referentialIntegrity.collectReferences(),
       },
     }
-  }
-
-  private escapeKeys(data: Record<string, any>) {
-    if (!this.meta.config.escapeKeys) { return data }
-    return deepMapKeys(data, key => {
-      return key.toString()
-        .replace(/\\/g, '\\\\')
-        .replace(/\./g, '\\u002e')
-        .replace(/\$/g, '\\u0024')
-    })
   }
 
   // #endregion
@@ -322,9 +312,8 @@ export default class ModelBackend<M extends Model> {
   private async validateUnique(model: M, result: ValidatorResult<this>) {
     const serialized = model.serialize()
 
-    for (const [key, type] of objectEntries(model.schema)) {
-      const attribute = key as keyof M
-
+    for (const [attribute, type] of objectEntries(model.schema)) {
+      if (typeof attribute !== 'string') { continue }
       if (type.options.unique == null || type.options.unique === false) { continue }
       if (!model.isModified(attribute)) { continue }
 
@@ -333,7 +322,7 @@ export default class ModelBackend<M extends Model> {
 
       await this.validateUniqueAttribute(
         model,
-        attribute,
+        attribute as keyof M,
         value,
         isPlainObject(type.options.unique) ? type.options.unique : {},
         result
@@ -368,6 +357,46 @@ export default class ModelBackend<M extends Model> {
       result.for(attribute as string).addError('unique', "This value is already taken")
     }
   }
+
+  // #endregion
+
+  // #region Hydration
+
+  /**
+   * Creates a new model by hydration from the database.
+   *
+   * @param attributes The attributes to hydrate with.
+   */
+  public async hydrate(document: Document): Promise<M> {
+    const model = new this.Model()
+
+    const {_id, ...rest} = this.unescapeKeys(document)
+    const id = model.meta.idFromMongo(_id)
+    await model.deserialize({id, ...rest})
+    return model
+  }
+
+  private escapeKeys(data: Record<string, any>) {
+    if (!this.meta.config.escapeKeys) { return data }
+    return deepMapKeys(data, key => {
+      return key.toString()
+        .replace(/\\/g, '\\\\')
+        .replace(/\./g, '\\u002e')
+        .replace(/\$/g, '\\u0024')
+    })
+  }
+
+  private unescapeKeys(data: Record<string, any>) {
+    if (!this.meta.config.escapeKeys) { return data }
+
+    return deepMapKeys(data, key => {
+      return key.toString()
+        .replace(/\\u0024/g, '$')
+        .replace(/\\u002e/g, '.')
+        .replace(/\\\\/g, '\\')
+    })
+  }
+
 
   // #endregion
 

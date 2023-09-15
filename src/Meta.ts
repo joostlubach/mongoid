@@ -140,24 +140,4 @@ export default class Meta<M extends Model> {
     return attributes
   }
 
-  public serialize(model: M, includeVirtual: boolean): Record<keyof M, any> {
-    const attributes = this.getAttributes(model, includeVirtual)
-    const serialized = this.modelType.serialize(attributes)
-
-    if (includeVirtual) {
-      serialized.id = model.id
-      serialized.createdAt = model.createdAt
-      serialized.updatedAt = model.updatedAt
-    } else {
-      // Delete all virtual attributes.
-      for (const [name, type] of Object.entries(this.getSchema(model))) {
-        if (isVirtual(type)) {
-          delete serialized[name]
-        }
-      }
-    }
-
-    return serialized
-  }
-
 }
