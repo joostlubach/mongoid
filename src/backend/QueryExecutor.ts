@@ -23,6 +23,7 @@ export default class QueryExecutor<M extends Model> {
   constructor(
     private readonly backend: ModelBackend<M>,
     private readonly query: Query<M>,
+    private readonly options: QueryExecutorOptions = {}
   ) {}
 
   private get Model() {
@@ -30,7 +31,11 @@ export default class QueryExecutor<M extends Model> {
   }
 
   private get collection() {
-    return this.backend.collection
+    if (this.options.collection) {
+      return this.backend.client.db().collection(this.options.collection)
+    } else {
+      return this.backend.collection
+    }
   }
 
   private get filters() {
@@ -217,7 +222,7 @@ export default class QueryExecutor<M extends Model> {
 
     const parts = sparse([
       chalk.magenta(label),
-      chalk.bold(this.Model.name + (query.options.collection ? ` (${query.options.collection})` : '')),
+      chalk.bold(this.Model.name + (this.options.collection ? ` (${this.options.collection})` : '')),
       chalk.blue(`[${query.skipCount ?? 0} - ${query.limitCount == null ? '∞' : (query.skipCount ?? 0) + query.limitCount}]`),
       chalk.dim(JSON.stringify(query.filters)),
       source != null ? chalk.dim.underline(source) : null,
@@ -232,6 +237,10 @@ export default class QueryExecutor<M extends Model> {
 
 function serializeProjections(projections: Record<string, any>) {
   return mapKeys(projections, (val, key) => key === 'id' ? '_id' : key)
+}
+
+export interface QueryExecutorOptions {
+  collection?: string
 }
 
 export interface CountOptions extends AggregateOptions {

@@ -6,34 +6,23 @@ import Model from './Model'
 import { getModelClass } from './registry'
 import { Filter, ModelClass, Sort } from './typings'
 
-export interface QueryOptions {
-  collection?: string
-}
-
 export default class Query<M extends Model> {
 
   //------
   // Construction & properties
 
   constructor(
-    public readonly Model: ModelClass<M>,
-    public readonly options: QueryOptions = {}
+    public readonly Model: ModelClass<M>
   ) {}
 
   public copy(): Query<M> {
-    const copy = new Query<M>(this.Model, {...this.options})
+    const copy = new Query<M>(this.Model)
     copy.filters     = cloneDeep(this.filters)
     copy.sorts       = cloneDeep(this.sorts)
     copy.projections = {...this.projections}
     copy.skipCount   = this.skipCount
     copy.limitCount  = this.limitCount
     copy.collation   = this.collation
-    return copy
-  }
-
-  public switchCollection(collectionName: string) {
-    const copy = this.copy()
-    copy.options.collection = collectionName
     return copy
   }
 
@@ -182,8 +171,7 @@ export default class Query<M extends Model> {
       projections: this.projections,
       skipCount:   this.skipCount,
       limitCount:  this.limitCount,
-      collation:   this.collation,
-      options:     this.options
+      collation:   this.collation
     }
   }
 
@@ -214,5 +202,4 @@ export interface QueryRaw {
   limitCount:   number | null
   skipCount:    number | null
   collation:    CollationOptions | null
-  options:      QueryOptions
 }

@@ -4,8 +4,7 @@ import AggregationPipeline from './aggregation/AggregationPipeline'
 import Model from './Model'
 import Query from './Query'
 
-//------
-// Model options
+export type ModelConfig = MonoModelConfig<any> | PolyModelConfig<any>
 
 export interface ConfigCommon {
   name: string
@@ -19,11 +18,6 @@ export interface ConfigCommon {
   unique?:      UniqueMap
   transient?:   string[]
 }
-
-//------
-// Model config
-
-export type ModelConfig = MonoModelConfig<any> | PolyModelConfig<any>
 
 /**
  * Monomorphic model: configure with a single schema.
@@ -74,13 +68,6 @@ export type IDGenerator<I extends ID = any> = (model: Model) => I | Promise<I>
 export interface IDAdapter<I extends ID> {
   toMongo:   (id: I) => ID
   fromMongo: (id: ID) => I
-}
-
-export type Modifications<M extends Model> = {
-  [path in keyof M]: {
-    prevValue: M[path]
-    nextValue: M[path]
-  }
 }
 
 export interface ModelBackendOptions {

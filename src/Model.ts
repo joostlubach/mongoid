@@ -1,7 +1,7 @@
 import { cloneDeep, isEqual, some } from 'lodash'
 import Validator, { INVALID } from 'validator'
 import Meta from './Meta'
-import Query, { QueryOptions } from './Query'
+import Query from './Query'
 import { getModelMeta } from './registry'
 import { isVirtual } from './types/virtual'
 import { ID, ModelClass } from './typings'
@@ -252,8 +252,8 @@ export default class Model {
   /**
    * Builds a query for this model.
    */
-  public static query<M extends Model>(this: ModelClass<M>, options: QueryOptions = {}): Query<M> {
-    return new Query(this, options)
+  public static query<M extends Model>(this: ModelClass<M>): Query<M> {
+    return new Query(this)
   }
 
   /**

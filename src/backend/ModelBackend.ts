@@ -12,7 +12,7 @@ import { getModelMeta } from '../registry'
 import { Ref } from '../types/ref'
 import { IDOf, ModelClass, SaveOptions, UniqueSpec } from '../typings'
 import { deepMapKeys, indexName, withClientStackTrace } from '../util'
-import QueryExecutor from './QueryExecutor'
+import QueryExecutor, { QueryExecutorOptions } from './QueryExecutor'
 import ReferentialIntegrity from './ReferentialIntegrity'
 
 export default class ModelBackend<M extends Model> {
@@ -33,6 +33,9 @@ export default class ModelBackend<M extends Model> {
   }
 
   public get collection(): Collection {
+    if (this.Model === Model as ModelClass<Model>) {
+      throw new Error("Cannot access collection of abstract model, use a concrete model or use a colleciton name.")
+    }
     return this.client.db().collection(this.meta.collectionName)
   }
 
@@ -82,8 +85,8 @@ export default class ModelBackend<M extends Model> {
 
   // #region Query execution
 
-  public query(query: Query<M> = this.Model.query()) {
-    return new QueryExecutor(this, query)
+  public query(query: Query<M> = this.Model.query(), options: QueryExecutorOptions = {}) {
+    return new QueryExecutor(this, query, options)
   }
 
   // #endregion
@@ -151,7 +154,7 @@ export default class ModelBackend<M extends Model> {
     updates:  Record<string, any> | ((model: M) => any) = {},
     options:  SaveOptions = {}
   ): Promise<M> {
-    const query = this.Model.query(required)
+    const query = this.Model.filter(required)
 
     let model = await this.query(query).findOne()
 
