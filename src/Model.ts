@@ -251,9 +251,15 @@ export default class Model {
     this.originals = cloneDeep(this.attributes as Partial<this>)
   }
 
-  public getDirtyAttributes() {
-    return Object.keys(this.schema)
-      .filter(attr => this.isModified(attr as any)) as Array<string>
+  public getDiff<M extends Model>() {
+    const attributes: Partial<M> = {}
+
+    for (const attr of Object.keys(this.schema)) {
+      if (!this.isModified(attr)) { continue }
+      (attributes as any)[attr] = this.get(attr)
+    }
+
+    return attributes
   }
 
   // #endregion
