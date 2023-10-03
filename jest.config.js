@@ -1,20 +1,16 @@
 module.exports = {
-  preset:          'ts-jest',
-  testEnvironment: 'node',
-
-  setupFiles: [
-    // '<rootDir>/tests/setup.ts',
-  ],
-  setupFilesAfterEnv: [
-    // '<rootDir>/tests/helpers/index.ts',
-  ],
-
-  moduleDirectories: ['<rootDir>/..', 'node_modules'],
-
-  roots: ['<rootDir>/tests'],
-
-  testMatch: [
-    '<rootDir>/tests/**/*Test.ts',
-    '<rootDir>/tests/**/*-test.ts',
-  ],
-};
+  preset: 'ts-jest',
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          moduleResolution: 'Node',
+        },
+        isolatedModules: true
+      }
+    ],
+  },
+  testMatch: ['<rootDir>/src/**/*.test.ts'],
+  testEnvironment: 'node'
+}

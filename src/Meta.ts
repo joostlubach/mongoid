@@ -1,8 +1,8 @@
 import { pluralize } from 'inflected'
 import { snakeCase } from 'lodash'
-import { ObjectId } from 'mongodb'
 import { ObjectSchema, Type } from 'validator'
 import { object } from 'validator/types'
+import config from './config'
 import Model from './Model'
 import { isVirtual } from './types/virtual'
 import { ID, Index, ModelClass, ModelConfig } from './typings'
@@ -13,7 +13,7 @@ export default class Meta<M extends Model> {
   // Construction
 
   constructor(
-    public readonly Model: ModelClass<M>,
+    public readonly Model:  ModelClass<M>,
     public readonly config: ModelConfig,
   ) {}
 
@@ -30,8 +30,10 @@ export default class Meta<M extends Model> {
   }
 
   public idToMongo(id: ID): ID {
-    if (id != null && this.config.idAdapter != null) {
+    if (this.config.idAdapter != null) {
       return this.config.idAdapter.toMongo(id)
+    } else if (config.idAdapter != null ) {
+      return config.idAdapter.toMongo(id)
     } else {
       return id
     }
@@ -40,6 +42,8 @@ export default class Meta<M extends Model> {
   public idFromMongo(mongoID: ID): ID {
     if (this.config.idAdapter != null) {
       return this.config.idAdapter.fromMongo(mongoID)
+    } else if (config.idAdapter != null) {
+      return config.idAdapter.fromMongo(mongoID)
     } else {
       return mongoID
     }
@@ -59,7 +63,7 @@ export default class Meta<M extends Model> {
     if (this.config.idGenerator != null) {
       return await this.config.idGenerator(model)
     } else {
-      return new ObjectId()
+      return config.idGenerator(model)
     }
   }
 
