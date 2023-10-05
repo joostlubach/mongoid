@@ -3,7 +3,7 @@ import { CollationOptions } from 'mongodb'
 import { sparse } from 'ytil'
 import AggregationPipeline from './aggregation/AggregationPipeline'
 import Model from './Model'
-import { getModelClass } from './registry'
+import { getModelClass, getModelMeta } from './registry'
 import { Filter, ModelClass, Sort } from './typings'
 
 export default class Query<M extends Model> {
@@ -49,7 +49,8 @@ export default class Query<M extends Model> {
     for (const filter of filters) {
       const {id, ...rest} = removeUndefineds(filter)
       if (id != null) {
-        copy.filters.push({_id: id})
+        const meta = getModelMeta(Model)
+        copy.filters.push({_id: meta.idToMongo(id)})
       }
       if (Object.keys(rest).length > 0) {
         copy.filters.push(rest)

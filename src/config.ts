@@ -2,13 +2,16 @@
 
 import { isFunction, merge } from 'lodash'
 import { ConnectOptions, ObjectId } from 'mongodb'
-import { IDGenerator } from './typings'
+import { ID, IDAdapter, IDGenerator } from './typings'
 
-export interface Config {
+export interface Config<I extends ID> {
   connect?: ConnectOptions
 
   /** A function that generates an ID for the model when it is created. */
-  idGenerator: IDGenerator
+  idGenerator: IDGenerator<I>
+
+  /** An ID adapter used to convert a custom ID type from and to mongo */
+  idAdapter?: IDAdapter<I>
 
   /** Whether to manage timestamp fields `createdAt` and `updatedAt`. */
   timestamps: boolean
@@ -33,7 +36,7 @@ export interface Logger {
   error: (message: string, ...meta: any[]) => void
 }
 
-const config: Config = {
+const config: Config<any> = {
   connect:        {},
   idGenerator:    () => new ObjectId(),
   timestamps:     true,
@@ -51,7 +54,7 @@ const config: Config = {
 }
 export default config
 
-export function configure(cfg: Partial<Config> | ((config: Config) => void)) {
+export function configure<I extends ID>(cfg: Partial<Config<I>> | ((config: Config<I>) => void)) {
   if (isFunction(cfg)) {
     cfg(config)
   } else {
