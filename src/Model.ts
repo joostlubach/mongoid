@@ -19,7 +19,7 @@ export default class Model {
     Object.defineProperty(this, 'isNew', {value: true, writable: true, enumerable: false})
     Object.assign(this, {id, ...coerced})
 
-    this.isNew = true
+    this.persisted = false
   }
 
   public id:        ID = null!
@@ -32,7 +32,10 @@ export default class Model {
   /**
    * Whether this model has not yet been saved to the database.
    */
-  public isNew: boolean
+  private persisted: boolean
+  public get isPersisted() {
+    return this.persisted
+  }
 
   // #region Meta
 
@@ -186,7 +189,7 @@ export default class Model {
 
   /**
    * Deserializes this model from JSON. Similar to {@link #assign}, but also sets the ID and timestamps,
-   * and marks the model as "clean".
+   * and marks the model as `clean` and `persisted`.
    *
    * @param attributes The attributes to hydrate with.
    */
@@ -197,12 +200,13 @@ export default class Model {
     if (Object.keys(coerced).length === 0) { return }
 
     Object.assign(this, coerced)
-    this.markClean()
 
-    this.id        = id!
-    this.isNew     = false
-    this.updatedAt = updatedAt
-    this.createdAt = createdAt
+
+    this.markClean()
+    this.id         = id!
+    this.persisted = true
+    this.updatedAt  = updatedAt
+    this.createdAt  = createdAt
   }
 
   /**
@@ -249,6 +253,10 @@ export default class Model {
 
   public markClean() {
     this.originals = cloneDeep(this.attributes as Partial<this>)
+  }
+
+  public markDeleted() {
+    this.persisted = false
   }
 
   public getDiff<M extends Model>() {

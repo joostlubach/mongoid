@@ -198,33 +198,42 @@ export default class ModelBackend<M extends Model> {
       await callHook(model, 'beforeSave', this)
     }
 
+    const shouldCreate = !model.isPersisted
     await withClientStackTrace(async () => {
-      const now = new Date()
-      if (model.isNew) {
-        const document = await this.buildInsertionDocument(model, now)
-        await this.collection.insertOne(document, {
-          bypassDocumentValidation: true,
-        })
-        model.updatedAt = now
-        model.createdAt = now
+      if (shouldCreate) {
+        await this.createModel(model)
       } else {
-        const filter = {_id: model.mongoID} as Filter<any>
-        const update = await this.buildUpdate(model, now)
-        if (update != null) {
-          await this.collection.updateOne(filter, update, {
-            bypassDocumentValidation: true,
-          })
-          model.updatedAt = now
-        }
+        await this.updateModel(model)
       }
     })
 
-    const wasNew = model.isNew
-    model.isNew = false
     if (options.hooks !== false) {
-      await callHook(model, 'afterSave', this, wasNew)
+      await callHook(model, 'afterSave', this, shouldCreate)
     }
     model.markClean()
+  }
+
+  private async createModel(model: M) {
+    const now = new Date()
+    const document = await this.buildInsertionDocument(model, new Date())
+    await this.collection.insertOne(document, {
+      bypassDocumentValidation: true,
+    })
+    model.updatedAt = now
+    model.createdAt = now
+  }
+
+  private async updateModel(model: M) {
+    const filter = {_id: model.mongoID} as Filter<any>
+
+    const now = new Date()
+    const update = await this.buildUpdate(model, now)
+    if (update == null) { return }
+
+    await this.collection.updateOne(filter, update, {
+      bypassDocumentValidation: true,
+    })
+    model.updatedAt = now
   }
 
   private async buildInsertionDocument(model: M, now: Date): Promise<Record<string, any>> {
@@ -280,8 +289,12 @@ export default class ModelBackend<M extends Model> {
     const integrity = new ReferentialIntegrity(this, model)
     await integrity.processDeletion()
 
-    const query = this.Model.filter({id: model.id})
-    return await this.query(query).deleteAll()
+    const query  = this.Model.filter({id: model.id})
+    const result = await this.query(query).deleteAll()
+    if (result.acknowledged && result.deletedCount > 0) {
+      model.markDeleted()
+    }
+    return result
   }
 
   // #endregion

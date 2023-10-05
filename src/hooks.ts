@@ -26,7 +26,7 @@ type Hook<M extends Model> =
 export type BeforeValidateHook<M extends Model> = (this: M,) => any | Promise<any>
 export type ValidateHook<M extends Model>       = (this: M, result: ValidatorResult<M>,) => any | Promise<any>
 export type BeforeSaveHook<M extends Model>     = (this: M, backend: ModelBackend<M>,) => any | Promise<any>
-export type AfterSaveHook<M extends Model>      = (this: M, backend: ModelBackend<M>, wasNew: boolean) => any | Promise<any>
+export type AfterSaveHook<M extends Model>      = (this: M, backend: ModelBackend<M>, created: boolean) => any | Promise<any>
 export type BeforeDeleteHook<M extends Model>   = (this: M, backend: ModelBackend<M>, ) => any | Promise<any>
 export type AfterDeleteHook<M extends Model>    = (this: M, backend: ModelBackend<M>, ) => any | Promise<any>
 
