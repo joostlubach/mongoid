@@ -210,7 +210,7 @@ export default class ModelBackend<M extends Model> {
     if (options.hooks !== false) {
       await callHook(model, 'afterSave', this, shouldCreate)
     }
-    model.markClean()
+    model.markPersisted()
   }
 
   private async createModel(model: M) {

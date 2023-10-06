@@ -1,6 +1,6 @@
 import { cloneDeep, isEqual, some } from 'lodash'
 import Validator, { INVALID } from 'validator'
-import { objectEntries } from 'ytil'
+import { emptyObject, objectEntries, objectKeys } from 'ytil'
 import Meta from './Meta'
 import Query from './Query'
 import { getModelMeta } from './registry'
@@ -15,16 +15,14 @@ export default class Model {
   constructor(attributes: Record<string, any> = {}) {
     const {id, ...rest} = attributes
     const coerced = this.coerce(rest, false)
-    Object.defineProperty(this, 'originals', {value: null, writable: true, enumerable: false})
-    Object.defineProperty(this, 'isNew', {value: true, writable: true, enumerable: false})
+    Object.defineProperty(this, 'originals', {value: emptyObject(), writable: true, enumerable: false})
+    Object.defineProperty(this, 'persisted', {value: false, writable: true, enumerable: false})
     Object.assign(this, {id, ...coerced})
-
-    this.persisted = false
   }
 
   public id:        ID = null!
 
-  public originals: Record<string, any> | null = null
+  public originals: Record<string, any> = {}
 
   public createdAt: Date | null = null
   public updatedAt: Date | null = null
@@ -32,7 +30,7 @@ export default class Model {
   /**
    * Whether this model has not yet been saved to the database.
    */
-  private persisted: boolean
+  private persisted: boolean = false
   public get isPersisted() {
     return this.persisted
   }
@@ -202,11 +200,11 @@ export default class Model {
     Object.assign(this, coerced)
 
 
-    this.markClean()
+    this.originals = cloneDeep(this.attributes as Partial<this>)
     this.id         = id!
-    this.persisted = true
     this.updatedAt  = updatedAt
     this.createdAt  = createdAt
+    this.markPersisted()
   }
 
   /**
@@ -227,7 +225,7 @@ export default class Model {
    * @param attribute An attribute to check or leave out to check the entire model.
    */
   public isModified(attribute?: string): boolean {
-    if (this.originals == null) { return true }
+    if (objectKeys(this.originals).length === 0) { return true }
 
     if (attribute === undefined) {
       const attributes = Object.keys(this.schema)
@@ -235,24 +233,19 @@ export default class Model {
     }
 
     const type = this.schema[attribute as any]
-    if (type == null || isVirtual(type)) {
-      return false
-    }
+    if (type == null || isVirtual(type)) { return false }
 
-    const originals  = this.originals
-    const attributes = this.attributes
-
-    if (attributes[attribute] == null) {
-      return originals[attribute] != null
-    } else if (originals[attribute] == null) {
-      return attributes[attribute] != null
+    if (this.attributes[attribute] == null) {
+      return this.originals[attribute] != null
+    } else if (this.originals[attribute] == null) {
+      return this.attributes[attribute] != null
     } else {
-      return !isEqual(attributes[attribute], originals[attribute])
+      return !isEqual(this.attributes[attribute], this.originals[attribute])
     }
   }
 
-  public markClean() {
-    this.originals = cloneDeep(this.attributes as Partial<this>)
+  public markPersisted() {
+    this.persisted = true
   }
 
   public markDeleted() {
