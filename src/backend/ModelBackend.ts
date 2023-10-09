@@ -34,7 +34,7 @@ export default class ModelBackend<M extends Model> {
 
   public get collection(): Collection {
     if (this.Model === Model as ModelClass<Model>) {
-      throw new Error("Cannot access collection of abstract model, use a concrete model or use a colleciton name.")
+      throw new Error("Cannot access collection of abstract model, use a concrete model or use a collection name.")
     }
     return this.client.db().collection(this.meta.collectionName)
   }

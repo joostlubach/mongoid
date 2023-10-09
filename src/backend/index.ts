@@ -10,8 +10,4 @@ export { default as Meta } from '../Meta'
 export { default as ReferentialIntegrity, ReferentialIntegrityError, type Reference } from './ReferentialIntegrity'
 
 export * from './createIndex'
-export {  Ref, type RefOptions  } from 'types/ref'
-export {  PolymorphicRef  } from 'types/polymorphicRef'
-export {  isVirtual  } from 'types/virtual'
-
 export { type MongoClient } from 'mongodb'

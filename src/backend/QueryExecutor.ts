@@ -131,7 +131,11 @@ export default class QueryExecutor<M extends Model> {
       const cursor = this.runQueryRaw(this.query.project(project))
 
       for await (const doc of cursor) {
-        const get = (prop: string) => doc[prop === 'id' ? '_id' : prop]
+        const get = (prop: string) => (
+          prop === 'id'
+            ? this.backend.meta.idFromMongo(doc._id)
+            : doc[prop]
+        )
         if (properties.length === 1) {
           values.push(get(properties[0]))
         } else {

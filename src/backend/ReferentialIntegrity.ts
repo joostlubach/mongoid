@@ -1,10 +1,10 @@
 import chalk from 'chalk'
 import { isArray, some, uniq } from 'lodash'
-import { Ref, RefDeleteStrategy, RefOptions } from 'types/ref'
 import { flatMap, MapBuilder, modifyInObject, splitArray } from 'ytil'
 import config from '../config'
 import Model from '../Model'
 import { getAllModelClasses, getModelClass } from '../registry'
+import { Ref, RefDeleteStrategy, RefOptions } from '../types/ref'
 import { ID, ModelClass } from '../typings'
 import ModelBackend from './ModelBackend'
 
