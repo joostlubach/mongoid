@@ -189,17 +189,12 @@ export default class Query<M extends Model> {
       collation
     } = raw
 
-    // Apply the filters and sorts using the function as they transform things a bit.
     if (filters != null) {
-      this.clearFilters()
-      this.filter(...filters)
+      this._filters = filters
     }
     if (sorts != null) {
-      this.clearSorts()
-      this.sort(sorts)
+      this._sorts = sorts
     }
-
-    // Rest can be assigned.
     if (projections !== undefined) {
       this._projections = projections
     }

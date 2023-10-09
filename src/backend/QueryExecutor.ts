@@ -85,7 +85,7 @@ export default class QueryExecutor<M extends Model> {
   }
 
   public async total(options: Omit<CountOptions, 'skip' | 'limit'> = {}): Promise<number> {
-    return this.count({skip: 0, limit: null})
+    return this.count({skip: 0, limit: null, ...options})
   }
 
   // #endregion
