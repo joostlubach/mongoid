@@ -283,17 +283,35 @@ export default class ModelBackend<M extends Model> {
 
   // #region Delete
 
-  public async deleteOne(model: M): Promise<DeleteResult> {
-    await callHook(model, 'beforeDelete', this)
+  public async delete(query: Query<M>): Promise<DeleteResult>
+  public async delete(model: M): Promise<DeleteResult>
+  public async delete(queryOrModel: Query<M> | M): Promise<DeleteResult> {
+    const query = queryOrModel instanceof Model
+      ? this.Model.filter({id: queryOrModel.id}).limit(1)
+      : queryOrModel
 
-    const integrity = new ReferentialIntegrity(this, model)
-    await integrity.processDeletion()
-
-    const query  = this.Model.filter({id: model.id})
-    const result = await this.query(query).deleteAll()
-    if (result.acknowledged && result.deletedCount > 0) {
-      model.markDeleted()
+    if (query.limitCount != null && query.limitCount !== 1) {
+      throw new Error("Can only delete one single model or all models matched by a query.")
     }
+
+    const models = await this.query(query).find()
+
+    await Promise.all(models.map(it => callHook(it, 'beforeDelete', this)))
+    await Promise.all(models.map(async model => {
+      const integrity = new ReferentialIntegrity(this, model)
+      await integrity.processDeletion()
+    }))
+
+    const result = query.limitCount === 1
+      ? await this.query(query).deleteOne()
+      : await this.query(query).deleteAll()
+
+    if (result.acknowledged && result.deletedCount > 0) {
+      for (const model of models) {
+        model.markDeleted()
+      }
+    }
+
     return result
   }
 

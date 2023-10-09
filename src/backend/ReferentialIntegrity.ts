@@ -34,7 +34,7 @@ export default class ReferentialIntegrity<M extends Model> {
 
     if (options.fix) {
       if (some(invalid, ([, strategy]) => strategy === 'cascade')) {
-        await this.backend.deleteOne(this.model)
+        await this.backend.delete(this.model)
         return {status: 'deleted'}
       }
 

@@ -4,7 +4,7 @@ import { sparse } from 'ytil'
 import AggregationPipeline from './aggregation/AggregationPipeline'
 import Model from './Model'
 import { getModelClass, getModelMeta } from './registry'
-import { Filter, ModelClass, Sort } from './typings'
+import { Filter, ModelClass, Sorts } from './typings'
 
 export default class Query<M extends Model> {
 
@@ -17,51 +17,57 @@ export default class Query<M extends Model> {
 
   public copy(): Query<M> {
     const copy = new Query<M>(this.Model)
-    copy.filters     = cloneDeep(this.filters)
-    copy.sorts       = cloneDeep(this.sorts)
-    copy.projections = {...this.projections}
-    copy.skipCount   = this.skipCount
-    copy.limitCount  = this.limitCount
-    copy.collation   = this.collation
+    copy._filters     = cloneDeep(this._filters)
+    copy._sorts       = cloneDeep(this._sorts)
+    copy._projections = {...this._projections}
+    copy._skipCount   = this._skipCount
+    copy._limitCount  = this._limitCount
+    copy._collation   = this._collation
     return copy
   }
 
-  public filters:     Filter[] = []
-  public projections: Record<string, any> | null = null
-  public sorts:       Sort[] = []
-  public skipCount:   number | null = null
-  public limitCount:  number | null = null
-  public collation:   CollationOptions | null = null
+  private _filters:     Filter[] = []
+
+  /**
+   * The filters as an array.
+   */
+  public get filters() {
+    return this._filters
+  }
 
   /**
    * Flattens all filters to a single object. Duplicate keys will be overwritten.
    */
   public get flattenedFilters(): Record<string, any> {
-    return Object.assign({}, ...this.filters)
+    return Object.assign({}, ...this._filters)
   }
+
+  private _projections: Record<string, any> | null = null
+  public get projections() { return this._projections }
+
+  private _sorts: Sorts = {}
+  public get sorts() { return this._sorts }
+
+  private _skipCount:  number | null = null
+  private _limitCount: number | null = null
+  public get skipCount()  { return this._skipCount }
+  public get limitCount() { return this._limitCount }
+
+  private _collation: CollationOptions | null = null
+  public get collation() { return this._collation }
 
   //------
   // Modification interface
 
   public filter(...filters: Record<string, any>[]): Query<M> {
     const copy = this.copy()
-
-    for (const filter of filters) {
-      const {id, ...rest} = removeUndefineds(filter)
-      if (id != null) {
-        const meta = getModelMeta(Model)
-        copy.filters.push({_id: meta.idToMongo(id)})
-      }
-      if (Object.keys(rest).length > 0) {
-        copy.filters.push(rest)
-      }
-    }
+    copy._filters = filters.map(removeUndefineds)
     return copy
   }
 
   public removeFilter(name: string) {
     const copy = this.copy()
-    copy.filters = this.filters.map(filter => {
+    copy._filters = this._filters.map(filter => {
       if (name in filter) {
         filter = omit(filter, name)
       }
@@ -77,65 +83,64 @@ export default class Query<M extends Model> {
 
   public clearFilters() {
     const copy = this.copy()
-    copy.filters = []
+    copy._filters = []
     return copy
   }
 
   public none() {
     const copy = this.copy()
-    copy.filters = [{id: -1}]
+    copy._filters = [{id: -1}]
     return copy
   }
 
   public project(projections: Record<string, any>): Query<M> {
     const copy = this.copy()
-    copy.projections = projections
+    copy._projections = projections
     return copy
   }
 
   public sort(sorts: Record<string, any>): Query<M> {
-    const {id, ...rest} = sorts
     const copy = this.copy()
-    copy.sorts.unshift({...rest, ...(id == null ? null : {_id: id})})
+    copy._sorts = {...copy._sorts, ...sorts}
     return copy
   }
 
   public clearSorts() {
     const copy = this.copy()
-    copy.sorts = []
+    copy._sorts = {}
     return copy
   }
 
   public skip(count: number | null): Query<M> {
     const copy = this.copy()
-    copy.skipCount = count
+    copy._skipCount = count
     return copy
   }
 
   public limit(count: number | null): Query<M> {
     const copy = this.copy()
-    copy.limitCount = count
+    copy._limitCount = count
     return copy
   }
 
   public union(other: Query<M>) {
     const merged = new Query(this.Model)
-    merged.filters = [{
-      $or: [...this.filters, ...merged.filters],
+    merged._filters = [{
+      $or: [...this._filters, ...merged._filters],
     }]
 
-    merged.sorts = [...this.sorts, ...other.sorts]
-    merged.projections =
+    merged._sorts = {...this._sorts, ...other._sorts}
+    merged._projections =
       this.projections == null && other.projections == null ? {} :
       this.projections == null ? {...other.projections} :
       other.projections == null ? {...this.projections} :
       {...this.projections, ...other.projections}
 
     const skipCounts = sparse([this.skipCount, other.skipCount])
-    merged.skipCount = skipCounts.length > 0 ? Math.min(...skipCounts) : null
+    merged._skipCount = skipCounts.length > 0 ? Math.min(...skipCounts) : null
 
     const limitCounts = sparse([this.limitCount, other.limitCount])
-    merged.limitCount = limitCounts.length > 0 ? Math.max(...limitCounts) : null
+    merged._limitCount = limitCounts.length > 0 ? Math.max(...limitCounts) : null
 
     return merged
   }
@@ -146,12 +151,10 @@ export default class Query<M extends Model> {
   public toPipeline(): AggregationPipeline<M> {
     const pipeline = new AggregationPipeline<M>(this.Model)
 
-    if (this.filters.length > 0) {
-      pipeline.match({$and: this.filters})
+    if (this._filters.length > 0) {
+      pipeline.match({$and: this._filters})
     }
-    for (const sort of this.sorts) {
-      pipeline.sort(sort)
-    }
+    pipeline.sort(this._sorts)
     if (this.skipCount != null) {
       pipeline.skip(this.skipCount)
     }
@@ -167,19 +170,54 @@ export default class Query<M extends Model> {
   public serialize(): QueryRaw {
     return {
       model:       this.Model.name,
-      filters:     this.filters,
-      sorts:       this.sorts,
-      projections: this.projections,
-      skipCount:   this.skipCount,
-      limitCount:  this.limitCount,
-      collation:   this.collation
+      filters:     this._filters,
+      sorts:       this._sorts,
+      projections: this._projections,
+      skipCount:   this._skipCount,
+      limitCount:  this._limitCount,
+      collation:   this._collation
+    }
+  }
+
+  public deserialize(raw: Partial<QueryRaw>) {
+    const {
+      filters,
+      sorts,
+      projections,
+      skipCount,
+      limitCount,
+      collation
+    } = raw
+
+    // Apply the filters and sorts using the function as they transform things a bit.
+    if (filters != null) {
+      this.clearFilters()
+      this.filter(...filters)
+    }
+    if (sorts != null) {
+      this.clearSorts()
+      this.sort(sorts)
+    }
+
+    // Rest can be assigned.
+    if (projections !== undefined) {
+      this._projections = projections
+    }
+    if (skipCount != null) {
+      this._skipCount = skipCount
+    }
+    if (limitCount != null) {
+      this._limitCount = limitCount
+    }
+    if (collation != null) {
+      this._collation = collation
     }
   }
 
   public static deserialize(raw: QueryRaw): Query<any> {
     const Model = getModelClass(raw.model)
     const query = new Query(Model)
-    Object.assign(query, raw)
+    query.deserialize(raw)
     return query
   }
 
@@ -198,7 +236,7 @@ function removeUndefineds(filters: Record<string, any>) {
 export interface QueryRaw {
   model:        string
   filters:      Filter[]
-  sorts:        Sort[]
+  sorts:        Sorts
   projections:  Record<string, string | number> | null
   limitCount:   number | null
   skipCount:    number | null

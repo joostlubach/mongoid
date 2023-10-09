@@ -40,7 +40,26 @@ export default class QueryExecutor<M extends Model> {
 
   private get filters() {
     if (this.query.filters.length === 0) { return {} }
-    return {$and: this.query.filters}
+
+    const filters = this.query.filters.map(filter => {
+      const {id, ...rest} = filter
+      const transformed = {...rest}
+      if (id != null) {
+        transformed._id = getModelMeta(this.Model).idToMongo(id)
+      }
+      return transformed
+    })
+
+    return {$and: filters}
+  }
+
+  private get sorts() {
+    const {id, ...rest} = this.query.sorts
+    const transformed = {...rest}
+    if (id != null) {
+      transformed._id = id
+    }
+    return transformed
   }
 
   // #region Counting
@@ -133,6 +152,12 @@ export default class QueryExecutor<M extends Model> {
     )
   }
 
+  public async deleteOne(): Promise<DeleteResult> {
+    return await withClientStackTrace(
+      () => this.collection.deleteOne(this.filters)
+    )
+  }
+
   public async deleteAll(): Promise<DeleteResult> {
     return await withClientStackTrace(
       () => this.collection.deleteMany(this.filters)
@@ -185,9 +210,7 @@ export default class QueryExecutor<M extends Model> {
       const projections = serializeProjections(query.projections)
       cursor = cursor.project(projections)
     }
-    for (const sort of query.sorts) {
-      cursor = cursor.sort(sort)
-    }
+    cursor = cursor.sort(this.sorts)
     if (query.skipCount != null) {
       cursor = cursor.skip(query.skipCount)
     }

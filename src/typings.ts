@@ -82,7 +82,7 @@ export interface SaveOptions {
 }
 
 export type Filter = Record<string, any>
-export type Sort = Record<string, 1 | -1>
+export type Sorts = Record<string, 1 | -1>
 
 export type Index = SimpleIndex | IndexWithOptions
 export type DynamicIndex<M extends Model> = (model: M) => Promise<Primitive>
