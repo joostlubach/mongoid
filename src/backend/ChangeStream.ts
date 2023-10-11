@@ -10,7 +10,7 @@ import {
 import { AggregationPipeline } from '../aggregation'
 import Model from '../Model'
 import ModelChange from '../ModelChange'
-import { getModelMeta } from '../registry'
+import { getModelClassForCollection, getModelMeta } from '../registry'
 import { ModelClass } from '../typings'
 import ModelBackend from './ModelBackend'
 
@@ -24,7 +24,7 @@ export {
 export default class ChangeStream<M extends Model> {
 
   constructor(
-    private readonly backend: ModelBackend<M>,
+    private readonly backend: (Model: ModelClass<M>) => ModelBackend<M>,
     private readonly stream: mongo_ChangeStream,
     private readonly options: ChangeStreamOptions<M> = {}
   ) {
@@ -43,8 +43,7 @@ export default class ChangeStream<M extends Model> {
     await this.stream.close()
   }
 
-  public static watchDb(backend: ModelBackend<Model>, options: ChangeStreamOptions<Model> = {}) {
-    const db     = backend.client.db()
+  public static watchDb(backend: (Model: ModelClass<any>) => ModelBackend<Model>, db: Db, options: ChangeStreamOptions<Model> = {}) {
     const stages = options.pipeline?.serialize().stages
 
     return new ChangeStream<Model>(backend, db.watch(stages, ChangeStreamOptions.toMongo(options)))
@@ -54,7 +53,7 @@ export default class ChangeStream<M extends Model> {
     const db         = backend.client.db()
     const stages     = options.pipeline?.serialize().stages
     const collection = db.collection(getModelMeta(backend.Model).collectionName)
-    return new ChangeStream<M>(backend, collection.watch(stages, ChangeStreamOptions.toMongo(options)))
+    return new ChangeStream<M>(() => backend, collection.watch(stages, ChangeStreamOptions.toMongo(options)))
   }
 
   // #endregion
@@ -87,11 +86,21 @@ export default class ChangeStream<M extends Model> {
 
   private async emitChange(doc: ChangeStreamDocument) {
     if (this.listeners.size === 0) { return }
+    const Model = ChangeStream.getModelForChangeStreamDocument(doc)
+    if (Model == null) { return }
 
-    const change = await ModelChange.fromMongoChangeStreamDocument<M>(this.backend, doc)
+    const backend = this.backend(Model as ModelClass<M>)
+    const change  = await ModelChange.fromMongoChangeStreamDocument<M>(backend, doc)
     for (const listener of this.listeners) {
       listener(change)
     }
+  }
+
+  public static getModelForChangeStreamDocument(doc: ChangeStreamDocument) {
+    const collectionName = (doc as ChangeStreamInsertDocument).ns?.coll
+    if (collectionName == null) { return null }
+
+    return getModelClassForCollection(collectionName)
   }
 
   // #endregion
