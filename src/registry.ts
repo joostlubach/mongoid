@@ -23,6 +23,15 @@ export function getModelClass(name: string) {
   return Model
 }
 
+export function getModelClassForCollection(collectionName: string): ModelClass<mongoid_Model> {
+  const Model = REGISTRY.find(it => it[1].collectionName === collectionName)?.[0] ?? null
+  if (Model == null) {
+    throw new Error(`Model for collection \`${collectionName}\` is not registered as a model class`)
+  }
+
+  return Model
+}
+
 export function getModelMeta(nameOrModelClass: 'Model' | typeof mongoid_Model): Meta<mongoid_Model>
 export function getModelMeta<M extends mongoid_Model>(nameOrModelClass: string | ModelClass<M>): Meta<M>
 export function getModelMeta(nameOrModelClass: string | ModelClass<any>) {

@@ -49,7 +49,7 @@ export default class Aggregation<M extends Model> {
     }
 
     return withClientStackTrace(() => (
-      this.collection.count({$and: filters})
+      this.collection.countDocuments({$and: filters})
     ))
   }
 

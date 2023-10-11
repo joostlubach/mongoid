@@ -1,9 +1,9 @@
-import { MongoClient, ObjectId } from 'mongodb'
+import { Collection, MongoClient, ObjectId } from 'mongodb'
 import { ID } from 'typings'
 import { ModelBackend } from '../backend'
 import { configure } from '../config'
+import { testClient } from './client'
 import { Parent } from './datamodel'
-import { mockClient, MockCollection, MockCursor } from './mocks'
 
 describe("ID", () => {
 
@@ -11,9 +11,9 @@ describe("ID", () => {
   let client: MongoClient
   let backend: ModelBackend<Parent>
 
-  beforeEach(() => {
+  beforeEach(async () => {
     parent  = new Parent()
-    client  = mockClient()
+    client  = await testClient()
     backend = new ModelBackend(client, Parent)
   })
 
@@ -54,7 +54,7 @@ describe("ID", () => {
     })
 
     it("should use the ID generator when saving a new model", async () => {
-      const spy = jest.spyOn(MockCollection.prototype, 'insertOne')
+      const spy = jest.spyOn(Collection.prototype, 'insertOne')
 
       const parent = new Parent({name: "Parent 1"})
       await backend.save(parent)
@@ -105,8 +105,7 @@ describe("ID", () => {
     })
 
     it("should use `idToMongo` building a query cursor", async () => {
-      const spy = jest.spyOn(MockCollection.prototype, 'find')
-        .mockReturnValue(new MockCursor())
+      const spy = jest.spyOn(Collection.prototype, 'find')
 
       const query = Parent.filter({id: 'foo'})
       await backend.query(query).find()
@@ -123,7 +122,7 @@ describe("ID", () => {
     test.todo("should use `idFromMongo` when hydrating a model")
 
     it("should use `idToMongo` when inserting a model document", async () => {
-      const spy = jest.spyOn(MockCollection.prototype, 'insertOne')
+      const spy = jest.spyOn(Collection.prototype, 'insertOne')
 
       const parent = new Parent({id: 'foo', name: "Parent 1"})
       await backend.save(parent)
@@ -135,7 +134,7 @@ describe("ID", () => {
     })
 
     it("should use `idToMongo` when updating a model document", async () => {
-      const spy = jest.spyOn(MockCollection.prototype, 'updateOne')
+      const spy = jest.spyOn(Collection.prototype, 'updateOne')
 
       const parent = await backend.create({id: 'foo', name: "Parent 1"})
       parent.name = "Parent 2"

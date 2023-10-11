@@ -1,4 +1,4 @@
-import { AggregationCursor, FindCursor as MongoCursor } from 'mongodb'
+import { AggregationCursor, FindCursor as mongo_Cursor } from 'mongodb'
 import Model from '../Model'
 import ModelBackend from './ModelBackend'
 
@@ -6,12 +6,8 @@ export default class Cursor<M extends Model> {
 
   constructor(
     public readonly backend: ModelBackend<M>,
-    public readonly cursor: MongoCursor | AggregationCursor,
+    public readonly cursor: mongo_Cursor | AggregationCursor,
   ) {}
-
-  private get Model() {
-    return this.backend?.Model ?? null
-  }
 
   public async *[Symbol.asyncIterator]() {
     for await (const document of this.cursor) {
