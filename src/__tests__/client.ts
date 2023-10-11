@@ -1,28 +1,41 @@
 import { MongoClient } from 'mongodb'
 import { testSeed } from 'yest'
 
-const CLIENTS = new Map<string, MongoClient>()
+let _client: MongoClient | undefined
 
 export async function testClient() {
-  const seed     = testSeed()
-  const existing = CLIENTS.get(seed)
-  if (existing != null) { return existing }
+  if (_client != null) { return _client }
 
+  const seed   = testSeed()
   const dbName = process.env.MONGODB_DBNAME ?? `mongoid:test-${seed}`
   const url    = process.env.MONGODB_URL ?? `mongodb://localhost:27017/${dbName}`
-  const client = new MongoClient(url)
-  await client.connect()
+  _client = new MongoClient(url)
+  await _client.connect()
 
-  CLIENTS.set(seed, client)
-  console.log([...CLIENTS.keys()])
-  return client
+  return _client
 }
 
 afterEach(async () => {
-  const seed   = testSeed()
-  const client = CLIENTS.get(seed)
-  await client?.db().dropDatabase()
-  await client?.close()
-  CLIENTS.delete(seed)
+  await _client?.db().dropDatabase()
+  await _client?.close()
+  _client = undefined
 })
 
+beforeAll(async () => {
+  if (process.env.DROP_TEST_DBS) {
+    await dropTestDatabases()
+  }
+})
+
+async function dropTestDatabases() {
+  const client = new MongoClient('mongodb://localhost:27017')
+  await client.connect()
+
+  const dbs      = await client.db().admin().listDatabases()
+  const prefix   = 'mongoid:test-'
+  const names    = dbs.databases.filter(db => db.name.startsWith(prefix)).map(db => db.name)
+  const promises = names.map(it => client.db(it).dropDatabase())
+  await Promise.all(promises)
+
+  await client.close()
+}

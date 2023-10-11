@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { isArray, isFunction, omitBy } from 'lodash'
-import { Collection, DeleteResult, Filter, MongoClient, UpdateFilter } from 'mongodb'
+import { Collection, DeleteResult, Document, Filter, MongoClient, UpdateFilter } from 'mongodb'
 import Validator, { ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, objectEntries, sparse } from 'ytil'
 import config from '../config'

@@ -43,7 +43,7 @@ const config: Config<any> = {
   cachingEnabled: true,
 
   logger: {
-    debug: console.log,
+    debug: process.env.DEBUG ? console.debug : () => {},
     info:  console.log,
     warn:  console.warn,
     error: console.error,

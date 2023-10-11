@@ -27,18 +27,18 @@ describe("ID", () => {
       parent.meta.config.idGenerator = undefined
     })
 
-    it("should use Object IDs by default", async () => {
+    test("default ID is ObjectId", async () => {
       parent.meta.config.idGenerator = undefined
       const id = await parent.meta.generateID(parent)
       expect(id).toBeInstanceOf(ObjectId)
     })
 
-    it("should use the ID generator in the model config if set", async () => {
+    test("ID generator usage", async () => {
       const id = await parent.meta.generateID(parent)
       expect(id).toEqual('foo')
     })
 
-    it("should use the ID generator in the mongoid config if it was not set in the model config", async () => {
+    test("default ID generator", async () => {
       parent.meta.config.idGenerator = undefined
       configure({idGenerator: customIdGenerator})
       const id = await parent.meta.generateID(parent)
@@ -47,13 +47,13 @@ describe("ID", () => {
       expect(id).toBe('foo')
     })
 
-    it("should use the ID generator when using `ensureID()`", async () => {
+    test("usage in `ensureID()`", async () => {
       const parent = new Parent()
       await parent.ensureID()
       expect(parent.id).toEqual('foo')
     })
 
-    it("should use the ID generator when saving a new model", async () => {
+    test("usage when saving a new model", async () => {
       const spy = jest.spyOn(Collection.prototype, 'insertOne')
 
       const parent = new Parent({name: "Parent 1"})
@@ -78,7 +78,7 @@ describe("ID", () => {
       parent.meta.config.idAdapter   = undefined
     })
 
-    it("should use the ID adapter in the model config if set", async () => {
+    test("ID adapter", async () => {
       const toMongo   = parent.meta.idToMongo('foo')
       const fromMongo = parent.meta.idFromMongo('FOO')
 
@@ -86,7 +86,7 @@ describe("ID", () => {
       expect(fromMongo).toEqual('foo')
     })
 
-    it("it should fallback to the ID adapter in the mongoid config if it was not set in the model config", async () => {
+    test("config fallback", async () => {
       parent.meta.config.idGenerator = undefined
       parent.meta.config.idAdapter   = undefined
 
@@ -104,7 +104,7 @@ describe("ID", () => {
       expect(fromMongo).toEqual('bar')
     })
 
-    it("should use `idToMongo` building a query cursor", async () => {
+    test("`idToMongo` when building a query cursor", async () => {
       const spy = jest.spyOn(Collection.prototype, 'find')
 
       const query = Parent.filter({id: 'foo'})
@@ -115,13 +115,13 @@ describe("ID", () => {
       )
     })
 
-    test.todo("should use `idFromMongo` when using `QueryExecutor#pluck`")
+    test.todo("`idFromMongo` when using `QueryExecutor#pluck`")
 
-    test.todo("should use `idFromMongo` when using `Aggegration#pluck`")
+    test.todo("`idFromMongo` when using `Aggegration#pluck`")
 
-    test.todo("should use `idFromMongo` when hydrating a model")
+    test.todo("`idFromMongo` when hydrating a model")
 
-    it("should use `idToMongo` when inserting a model document", async () => {
+    test("`idToMongo` when inserting a model document", async () => {
       const spy = jest.spyOn(Collection.prototype, 'insertOne')
 
       const parent = new Parent({id: 'foo', name: "Parent 1"})
@@ -133,7 +133,7 @@ describe("ID", () => {
       )
     })
 
-    it("should use `idToMongo` when updating a model document", async () => {
+    test("`idToMongo` when updating a model document", async () => {
       const spy = jest.spyOn(Collection.prototype, 'updateOne')
 
       const parent = await backend.create({id: 'foo', name: "Parent 1"})

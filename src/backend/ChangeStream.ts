@@ -1,53 +1,60 @@
-import { isFunction } from 'lodash'
 import {
   ChangeStream as mongo_ChangeStream,
   ChangeStreamDeleteDocument,
   ChangeStreamDocument,
   ChangeStreamInsertDocument,
-  ChangeStreamOptions,
+  ChangeStreamOptions as mongo_ChangeStreamOptions,
   ChangeStreamUpdateDocument,
-  Collection,
   Db,
 } from 'mongodb'
 import { AggregationPipeline } from '../aggregation'
-import { ModelBackend } from '../backend'
 import Model from '../Model'
 import ModelChange from '../ModelChange'
 import { getModelMeta } from '../registry'
 import { ModelClass } from '../typings'
+import ModelBackend from './ModelBackend'
 
 export {
   type ChangeStreamDeleteDocument,
   type ChangeStreamDocument,
   type ChangeStreamInsertDocument,
-  type ChangeStreamOptions,
   type ChangeStreamUpdateDocument,
 }
 
 export default class ChangeStream<M extends Model> {
 
   constructor(
+    private readonly backend: ModelBackend<M>,
     private readonly stream: mongo_ChangeStream,
-    private readonly options: ChangeStreamOptions = {}
+    private readonly options: ChangeStreamOptions<M> = {}
   ) {
     stream.on('change', this.handleChange.bind(this))
+
+    this.on  = this.stream.on.bind(this.stream)
+    this.off = this.stream.off.bind(this.stream)
   }
+
+  public readonly on: typeof mongo_ChangeStream.prototype.on
+  public readonly off: typeof mongo_ChangeStream.prototype.off
 
   // #region Lifecycle
 
-  public close() {
-    this.stream.close()
+  public async close() {
+    await this.stream.close()
   }
 
-  public static watchDb(db: Db, pipeline?: AggregationPipeline<Model>, options: ChangeStreamOptions = {}) {
-    const stages = pipeline?.serialize().stages
-    return new ChangeStream<Model>(db.watch(stages, options))
+  public static watchDb(backend: ModelBackend<Model>, options: ChangeStreamOptions<Model> = {}) {
+    const db     = backend.client.db()
+    const stages = options.pipeline?.serialize().stages
+
+    return new ChangeStream<Model>(backend, db.watch(stages, ChangeStreamOptions.toMongo(options)))
   }
 
-  public static watchModel<M extends Model>(db: Db, Model: ModelClass<M>, pipeline?: AggregationPipeline<M>, options: ChangeStreamOptions = {}) {
-    const stages = pipeline?.serialize().stages
-    const collection = db.collection(getModelMeta(Model).collectionName)
-    return new ChangeStream<M>(collection.watch(stages, options))
+  public static watchModel<M extends Model>(backend: ModelBackend<M>, options: ChangeStreamOptions<M> = {}) {
+    const db         = backend.client.db()
+    const stages     = options.pipeline?.serialize().stages
+    const collection = db.collection(getModelMeta(backend.Model).collectionName)
+    return new ChangeStream<M>(backend, collection.watch(stages, ChangeStreamOptions.toMongo(options)))
   }
 
   // #endregion
@@ -68,13 +75,46 @@ export default class ChangeStream<M extends Model> {
   }
 
   private handleChange(doc: ChangeStreamDocument) {
+    this.emitRaw(doc)
+    this.emitChange(doc)
+  }
+
+  private emitRaw(doc: ChangeStreamDocument) {
     for (const listener of this.rawListeners) {
       listener(doc)
     }
   }
 
+  private async emitChange(doc: ChangeStreamDocument) {
+    if (this.listeners.size === 0) { return }
+
+    const change = await ModelChange.fromMongoChangeStreamDocument<M>(this.backend, doc)
+    for (const listener of this.listeners) {
+      listener(change)
+    }
+  }
+
   // #endregion
 
+}
+
+export interface ChangeStreamOptions<M extends Model> extends Omit<mongo_ChangeStreamOptions, 'fullDocument' | 'fullDocumentBeforeChange'> {
+  full?:     boolean
+  pipeline?: AggregationPipeline<M>
+}
+
+const ChangeStreamOptions: {
+  toMongo(options: ChangeStreamOptions<any>): mongo_ChangeStreamOptions
+} = {
+  toMongo(options: ChangeStreamOptions<any>): mongo_ChangeStreamOptions {
+    const {full, ...rest} = options
+
+    return {
+      fullDocument:             full ? 'updateLookup' : undefined,
+      fullDocumentBeforeChange: full ? 'whenAvailable' : undefined,
+      ...rest
+    }
+  }
 }
 
 export type ChangeListener<M extends Model> = (change: ModelChange<M>) => void
