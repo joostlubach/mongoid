@@ -1,13 +1,15 @@
 import { MongoClient } from 'mongodb'
 import { testSeed } from 'yest'
+import { slugify, truncate } from 'ytil'
 
 let _client: MongoClient | undefined
 
 export async function testClient() {
   if (_client != null) { return _client }
 
-  const seed   = testSeed()
-  const dbName = process.env.MONGODB_DBNAME ?? `mongoid:test-${seed}`
+  const prefix = `mongoid-test-`
+  const suffix = slugify(expect.getState().currentTestName ?? testSeed())
+  const dbName = process.env.MONGODB_DBNAME ?? `${prefix}${truncate(suffix, 36 - prefix.length, {anchor: 'end', omission: ''})}`
   const url    = process.env.MONGODB_URL ?? `mongodb://localhost:27017/${dbName}`
   _client = new MongoClient(url)
   await _client.connect()

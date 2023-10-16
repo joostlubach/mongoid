@@ -11,7 +11,9 @@ describe("client", () => {
 
   test("test client", () => {
     expect(client).toBeDefined()
-    expect(client.db().databaseName).toMatch(/mongoid:test-[a-z0-9]+/)
+
+    // The name is mongoid-test-<full-test-name>, in this case `mongoid-test-client-test-client`.
+    expect(client.db().databaseName).toMatch(/mongoid-test-client-test-client/)
   })
 
   test("server version should be >= 6.0.0", async () => {

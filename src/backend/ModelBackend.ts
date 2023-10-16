@@ -66,18 +66,20 @@ export default class ModelBackend<M extends Model> {
       }
 
       config.logger.debug(`Creating index: ${this.Model.name}.${name}`)
-      try {
-        // Keep only defined keys.
-        this.collection.createIndex(spec, options)
-      } catch (error: any) {
-        if (error.codeName === 'IndexOptionsConflict') {
-          // This we can solve by dropping & recreating the index.
-          await this.collection.dropIndex(name)
-          await this.collection.createIndex(spec, options)
-        } else {
-          throw error
+      await withClientStackTrace(async () => {
+        try {
+          // Keep only defined keys.
+          this.collection.createIndex(spec, options)
+        } catch (error: any) {
+          if (error.codeName === 'IndexOptionsConflict') {
+            // This we can solve by dropping & recreating the index.
+            await this.collection.dropIndex(name)
+            await this.collection.createIndex(spec, options)
+          } else {
+            throw error
+          }
         }
-      }
+      })
     }
   }
 

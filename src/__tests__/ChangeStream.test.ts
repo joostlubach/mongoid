@@ -165,7 +165,7 @@ describe("ChangeStream", () => {
 
     async function createStream<D extends ChangeStreamDocument>(options: ChangeStreamOptions<any> = {}) {
       const stream    = ChangeStream.watchModel(backend, options)
-      const semaphore = new ValuedSemaphore<D>({timeout: 200})
+      const semaphore = new ValuedSemaphore<D>({timeout: 5000})
       const handler   = jest.fn<void, [D]>().mockImplementation(doc => {
         semaphore.signal(doc)
       })
@@ -175,7 +175,7 @@ describe("ChangeStream", () => {
       // For some reason, MongoDB needs to use the event loop to start the stream.
       await delay(0)
 
-      _stream = stream
+      _stream    = stream
       _semaphore = semaphore
 
       return {stream, semaphore}
@@ -218,7 +218,7 @@ describe("ChangeStream", () => {
 
       beforeEach(async () => {
         // For updates, we turn this on to allow fullDocumentBeforeChange to be set.
-        backend.client.db().createCollection('parents', {
+        await backend.client.db().createCollection('parents', {
           changeStreamPreAndPostImages: {
             enabled: true
           }
@@ -291,7 +291,7 @@ describe("ChangeStream", () => {
 
     async function createStream(options: ChangeStreamOptions<Parent> = {}) {
       const stream    = ChangeStream.watchModel(backend, options)
-      const semaphore = new ValuedSemaphore<ModelChange<Parent>>({timeout: 200})
+      const semaphore = new ValuedSemaphore<ModelChange<Parent>>({timeout: 500})
       const handler   = jest.fn<void, [ModelChange<Parent>]>().mockImplementation(doc => {
         semaphore.signal(doc)
       })

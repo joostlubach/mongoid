@@ -2,18 +2,18 @@ import { cloneDeep, omit } from 'lodash'
 import { CollationOptions } from 'mongodb'
 import { sparse } from 'ytil'
 import AggregationPipeline from './aggregation/AggregationPipeline'
+import FilterMatcher from './FilterMatcher'
 import Model from './Model'
-import { getModelClass, getModelMeta } from './registry'
+import { getModelClass } from './registry'
 import { Filter, ModelClass, Sorts } from './typings'
 
 export default class Query<M extends Model> {
 
-  //------
-  // Construction & properties
-
   constructor(
     public readonly Model: ModelClass<M>
   ) {}
+
+  // #region Properties
 
   public copy(): Query<M> {
     const copy = new Query<M>(this.Model)
@@ -56,8 +56,9 @@ export default class Query<M extends Model> {
   private _collation: CollationOptions | null = null
   public get collation() { return this._collation }
 
-  //------
-  // Modification interface
+  // #endregion
+
+  // #region Modification interface
 
   public filter(...filters: Record<string, any>[]): Query<M> {
     const copy = this.copy()
@@ -145,8 +146,9 @@ export default class Query<M extends Model> {
     return merged
   }
 
-  //------
-  // Pipeline conversion
+  // #endregion
+
+  // #region Pipeline conversion
 
   public toPipeline(): AggregationPipeline<M> {
     const pipeline = new AggregationPipeline<M>(this.Model)
@@ -164,8 +166,22 @@ export default class Query<M extends Model> {
     return pipeline
   }
 
-  //-------
-  // Serialization
+  // #endregion
+
+  // #region Matching
+
+  public matches(model: M): boolean {
+    for (const filters of this.filters) {
+      const matcher = new FilterMatcher(filters)
+      if (!matcher.matches(model)) { return false }
+    }
+
+    return true
+  }
+
+  // #endregion
+
+  // #region Serialization
 
   public serialize(): QueryRaw {
     return {
@@ -215,6 +231,8 @@ export default class Query<M extends Model> {
     query.deserialize(raw)
     return query
   }
+
+  // #endregion
 
 }
 

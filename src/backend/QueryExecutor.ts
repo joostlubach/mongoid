@@ -81,7 +81,9 @@ export default class QueryExecutor<M extends Model> {
       countDocumentsOptions.limit = this.query.limitCount ?? undefined
     }
 
-    return await this.collection.countDocuments(this.filters, countDocumentsOptions)
+    return await withClientStackTrace(() => (
+      this.collection.countDocuments(this.filters, countDocumentsOptions)
+    ))
   }
 
   public async total(options: Omit<CountOptions, 'skip' | 'limit'> = {}): Promise<number> {
