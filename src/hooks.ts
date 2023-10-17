@@ -7,6 +7,7 @@ import { ModelClass } from './typings'
 const HOOKS: WeakMap<any, Hooks<any>> = new Map()
 
 interface Hooks<M extends Model> {
+  initialize:     Set<InitializeHook<M>>
   beforeValidate: Set<BeforeValidateHook<M>>
   validate:       Set<ValidateHook<M>>
   beforeSave:     Set<BeforeSaveHook<M>>
@@ -16,6 +17,7 @@ interface Hooks<M extends Model> {
 }
 
 type Hook<M extends Model> =
+  | InitializeHook<M>
   | BeforeValidateHook<M>
   | ValidateHook<M>
   | BeforeSaveHook<M>
@@ -23,6 +25,7 @@ type Hook<M extends Model> =
   | BeforeDeleteHook<M>
   | AfterDeleteHook<M>
 
+export type InitializeHook<M extends Model>     = (this: ModelClass<M>, backend: ModelBackend<M>) => any | Promise<any>
 export type BeforeValidateHook<M extends Model> = (this: M,) => any | Promise<any>
 export type ValidateHook<M extends Model>       = (this: M, result: ValidatorResult<M>,) => any | Promise<any>
 export type BeforeSaveHook<M extends Model>     = (this: M, backend: ModelBackend<M>,) => any | Promise<any>
@@ -40,6 +43,7 @@ export const registerHook: RegisterHookFn = <M extends Model, H extends HookName
   let hooksForModel = HOOKS.get(Model)
   if (hooksForModel == null) {
     HOOKS.set(Model, hooksForModel = {
+      initialize:     new Set(),
       beforeValidate: new Set(),
       validate:       new Set(),
       beforeSave:     new Set(),

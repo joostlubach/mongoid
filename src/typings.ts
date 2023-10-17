@@ -1,5 +1,5 @@
 import { CreateIndexesOptions, Long, ObjectId } from 'mongodb'
-import { ObjectSchema, ObjectSchemaMap, PolySchemaInstance, SchemaInstance } from 'validator'
+import { MergedPolySchemaInstance, ObjectSchema, ObjectSchemaMap, SchemaInstance } from 'validator'
 import AggregationPipeline from './aggregation/AggregationPipeline'
 import Model from './Model'
 import Query from './Query'
@@ -99,8 +99,8 @@ export interface UniqueSpec {
   if?:    (subject: any) => boolean
 }
 
-export type MonomorphicModelClassOf<S extends ObjectSchema> = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & SchemaInstance<S>)
-export type PolymorphicModelClassOf<SM extends ObjectSchemaMap> = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & PolySchemaInstance<SM>)
+export type MonomorphicModelClassOf<S extends ObjectSchema>     = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & SchemaInstance<S>)
+export type PolymorphicModelClassOf<SM extends ObjectSchemaMap> = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & MergedPolySchemaInstance<SM>)
 
 export function TypedModel<S extends ObjectSchema>(schema: S): MonomorphicModelClassOf<S>
 export function TypedModel<SM extends ObjectSchemaMap>(schemas: SM): PolymorphicModelClassOf<SM>
@@ -111,5 +111,3 @@ export type ModelRaw = Record<string, any> & {
   createdAt: Date
   updatedAt: Date
 }
-
-export { type Document } from 'mongodb'

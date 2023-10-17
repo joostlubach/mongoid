@@ -11,4 +11,5 @@ export * from './registry'
 export * from './hooks'
 export * from './typings'
 export { configure, type Config } from './config'
-export { ObjectId } from 'mongodb'
+
+export { MongoClient, Db, Collection, type Document, ObjectId } from 'mongodb'
