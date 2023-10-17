@@ -11,7 +11,6 @@ export async function createIndex(collection: Collection, keys: Record<string, a
 
   await withClientStackTrace(async () => {
     try {
-      config.logger.debug(chalk`Creating index: {yellow ${collection.collectionName}.${name}}`)
       await collection.createIndex(keys, options)
     } catch (error: any) {
       if (error.codeName === 'IndexOptionsConflict') {
