@@ -4,14 +4,15 @@ import { Collection, DeleteResult, Document, Filter, MongoClient, UpdateFilter }
 import Validator, { ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, objectEntries, sparse } from 'ytil'
 import config from '../config'
-import { callHook } from '../hooks'
+import { callInstanceHook, callStaticHook } from '../hooks'
 import InvalidModelError from '../InvalidModelError'
 import Model from '../Model'
 import Query from '../Query'
 import { getModelMeta } from '../registry'
 import { Ref } from '../types/ref'
-import { IDOf, ModelClass, SaveOptions, UniqueSpec } from '../typings'
+import { IDOf, Index, ModelClass, SaveOptions, UniqueSpec } from '../typings'
 import { deepMapKeys, indexName, withClientStackTrace } from '../util'
+import { createIndex } from './admin'
 import QueryExecutor, { QueryExecutorOptions } from './QueryExecutor'
 import ReferentialIntegrity from './ReferentialIntegrity'
 
@@ -53,34 +54,18 @@ export default class ModelBackend<M extends Model> {
   private async _initialize() {
     config.logger.info(chalk`Initializing model {yellow ${this.Model.modelName}}`)
     await this.createIndexes()
+    await callStaticHook(this.Model, 'initialize', this)
   }
 
   private async createIndexes() {
-    for (const index of this.meta.config.indexes ?? []) {
-      const [keys, options] = isArray(index) ? index : [index, {}]
-      const spec = omitBy(keys, it => it === undefined) as Record<string, number | 'text'>
+    const promises = (this.meta.config.indexes ?? []).map(it => this.createIndex(it))
+    await Promise.all(promises)
+  }
 
-      const name = indexName(keys, options)
-      if (options.name === undefined) {
-        options.name = name
-      }
-
-      config.logger.debug(`Creating index: ${this.Model.name}.${name}`)
-      await withClientStackTrace(async () => {
-        try {
-          // Keep only defined keys.
-          this.collection.createIndex(spec, options)
-        } catch (error: any) {
-          if (error.codeName === 'IndexOptionsConflict') {
-            // This we can solve by dropping & recreating the index.
-            await this.collection.dropIndex(name)
-            await this.collection.createIndex(spec, options)
-          } else {
-            throw error
-          }
-        }
-      })
-    }
+  private async createIndex(index: Index) {
+    const [keys, options] = isArray(index) ? index : [index, {}]
+    const spec = omitBy(keys, it => it === undefined) as Record<string, number | 'text'>
+    await createIndex(this.collection, spec, options)
   }
 
   // #endregion
@@ -197,7 +182,7 @@ export default class ModelBackend<M extends Model> {
     }
 
     if (options.hooks !== false) {
-      await callHook(model, 'beforeSave', this)
+      await callInstanceHook(model, 'beforeSave', this)
     }
 
     const shouldCreate = !model.isPersisted
@@ -210,7 +195,7 @@ export default class ModelBackend<M extends Model> {
     })
 
     if (options.hooks !== false) {
-      await callHook(model, 'afterSave', this, shouldCreate)
+      await callInstanceHook(model, 'afterSave', this, shouldCreate)
     }
     model.markPersisted()
   }
@@ -298,7 +283,7 @@ export default class ModelBackend<M extends Model> {
 
     const models = await this.query(query).find()
 
-    await Promise.all(models.map(it => callHook(it, 'beforeDelete', this)))
+    await Promise.all(models.map(it => callInstanceHook(it, 'beforeDelete', this)))
     await Promise.all(models.map(async model => {
       const integrity = new ReferentialIntegrity(this, model)
       await integrity.processDeletion()
@@ -324,7 +309,8 @@ export default class ModelBackend<M extends Model> {
   public async validate(model: M): Promise<ValidatorResult<this>> {
     model.recoerce()
 
-    if (!await callHook(model, 'beforeValidate') && model.isModified()) {
+    const hookWasRun = await callInstanceHook(model, 'beforeValidate')
+    if (hookWasRun && model.isModified()) {
       model.recoerce()
     }
 
@@ -339,7 +325,7 @@ export default class ModelBackend<M extends Model> {
 
   private async validateExtra(model: M, result: ValidatorResult<this>) {
     await this.validateUnique(model, result)
-    await callHook(model, 'validate', result)
+    await callInstanceHook(model, 'validate', result)
   }
 
   private async validateUnique(model: M, result: ValidatorResult<this>) {
