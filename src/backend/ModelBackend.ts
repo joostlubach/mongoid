@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import { isArray, isFunction, omitBy } from 'lodash'
+import { DateTime } from 'luxon'
 import { Collection, DeleteResult, Document, Filter, MongoClient, UpdateFilter } from 'mongodb'
 import Validator, { ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, objectEntries, sparse } from 'ytil'
@@ -201,8 +202,8 @@ export default class ModelBackend<M extends Model> {
   }
 
   private async createModel(model: M) {
-    const now = new Date()
-    const document = await this.buildInsertionDocument(model, new Date())
+    const now = DateTime.local()
+    const document = await this.buildInsertionDocument(model, now)
     await this.collection.insertOne(document, {
       bypassDocumentValidation: true,
     })
@@ -213,7 +214,7 @@ export default class ModelBackend<M extends Model> {
   private async updateModel(model: M) {
     const filter = {_id: model.mongoID} as Filter<any>
 
-    const now = new Date()
+    const now = DateTime.local()
     const update = await this.buildUpdate(model, now)
     if (update == null) { return }
 
@@ -223,7 +224,7 @@ export default class ModelBackend<M extends Model> {
     model.updatedAt = now
   }
 
-  private async buildInsertionDocument(model: M, now: Date): Promise<Record<string, any>> {
+  private async buildInsertionDocument(model: M, now: DateTime): Promise<Record<string, any>> {
     await model.ensureID()
 
     const data = this.escapeKeys(model.serialize(false))
@@ -236,15 +237,15 @@ export default class ModelBackend<M extends Model> {
       ...data,
       _id:         model.mongoID,
       _references: referentialIntegrity.collectReferences(),
-      updatedAt:   now,
-      createdAt:   now,
+      updatedAt:   now.toJSDate(),
+      createdAt:   now.toJSDate(),
     }
     return document
   }
 
-  private async buildUpdate(model: M, now: Date): Promise<UpdateFilter<any> | null> {
+  private async buildUpdate(model: M, now: DateTime): Promise<UpdateFilter<any> | null> {
     const $set: Record<string, any> = {
-      updatedAt: now,
+      updatedAt: now.toJSDate(),
     }
 
     const serialized = this.escapeKeys(model.serialize(false))

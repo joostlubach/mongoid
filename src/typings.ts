@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import { CreateIndexesOptions, Long, ObjectId } from 'mongodb'
 import { MergedPolySchemaInstance, ObjectSchema, ObjectSchemaMap, SchemaInstance } from 'validator'
 import AggregationPipeline from './aggregation/AggregationPipeline'
@@ -108,6 +109,6 @@ export function TypedModel() { return Model }
 
 export type ModelRaw = Record<string, any> & {
   id:        ID | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: DateTime
+  updatedAt: DateTime
 }

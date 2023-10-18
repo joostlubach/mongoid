@@ -1,4 +1,5 @@
 import { cloneDeep, isEqual, some } from 'lodash'
+import { DateTime } from 'luxon'
 import Validator, { INVALID } from 'validator'
 import { emptyObject, objectEntries, objectKeys } from 'ytil'
 import Meta from './Meta'
@@ -24,8 +25,8 @@ export default class Model {
 
   public originals: Record<string, any> = {}
 
-  public createdAt: Date | null = null
-  public updatedAt: Date | null = null
+  public createdAt: DateTime | null = null
+  public updatedAt: DateTime | null = null
 
   /**
    * Whether this model has not yet been saved to the database.

@@ -50,6 +50,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "inflected": "^2.0.4",
+    "luxon": "^3.3.0",
     "mongodb": "^6.1.0",
     "query": "github:protobi/query",
     "strip-ansi": "^5.2.0",
