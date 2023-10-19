@@ -12,7 +12,7 @@ import Query from '../Query'
 import { getModelMeta } from '../registry'
 import { Ref } from '../types/ref'
 import { IDOf, Index, ModelClass, SaveOptions, UniqueSpec } from '../typings'
-import { deepMapKeys, indexName, withClientStackTrace } from '../util'
+import { deepMapKeys, withClientStackTrace } from '../util'
 import { createIndex } from './admin'
 import QueryExecutor, { QueryExecutorOptions } from './QueryExecutor'
 import ReferentialIntegrity from './ReferentialIntegrity'
@@ -47,14 +47,16 @@ export default class ModelBackend<M extends Model> {
 
   private initializePromise: Promise<void> | null = null
 
-  public async initialize() {
-    this.initializePromise ??= this._initialize()
+  public async initialize(options: InitializeOptions = {}) {
+    this.initializePromise ??= this._initialize(options)
     return this.initializePromise
   }
 
-  private async _initialize() {
+  private async _initialize(options: InitializeOptions) {
     config.logger.info(chalk`Initializing model {yellow ${this.Model.modelName}}`)
-    await this.createIndexes()
+    if (options.createIndexes !== false) {
+      await this.createIndexes()
+    }
     await callStaticHook(this.Model, 'initialize', this)
   }
 
@@ -420,4 +422,8 @@ export default class ModelBackend<M extends Model> {
 
   // #endregion
 
+}
+
+export interface InitializeOptions {
+  createIndexes?: boolean
 }
