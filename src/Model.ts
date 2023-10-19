@@ -203,8 +203,8 @@ export default class Model {
 
     this.originals = cloneDeep(this.attributes as Partial<this>)
     this.id         = id!
-    this.updatedAt  = updatedAt
-    this.createdAt  = createdAt
+    this.updatedAt  = updatedAt instanceof DateTime ? updatedAt : DateTime.fromJSDate(updatedAt)
+    this.createdAt  = createdAt instanceof DateTime ? createdAt : DateTime.fromJSDate(createdAt)
     this.markPersisted()
   }
 
