@@ -12,4 +12,4 @@ export * from './hooks'
 export * from './typings'
 export { configure, type Config } from './config'
 
-export { MongoClient, Db, Collection, type Document, ObjectId } from 'mongodb'
+export { MongoClient, Db, Collection, type Document, ObjectId, type CountOptions } from 'mongodb'
