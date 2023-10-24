@@ -100,7 +100,7 @@ export default class ChangeStream<M extends Model> {
     const collectionName = (doc as ChangeStreamInsertDocument).ns?.coll
     if (collectionName == null) { return null }
 
-    return getModelClassForCollection(collectionName)
+    return getModelClassForCollection(collectionName, false)
   }
 
   // #endregion
