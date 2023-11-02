@@ -11,8 +11,8 @@ const MODEL_META = new Meta(mongoid_Model, {
 })
 
 export function getModelClass<M extends mongoid_Model>(name: string, throwIfNotFound: false): ModelClass<M> | null
-export function getModelClass<M extends mongoid_Model>(name: string, throwIfNotFound?: true): ModelClass<M>
 export function getModelClass(name: 'Model'): ModelClass<mongoid_Model> | null
+export function getModelClass<M extends mongoid_Model>(name: string, throwIfNotFound?: true): ModelClass<M>
 export function getModelClass(name: string, throwIfNotFound: boolean = true) {
   if (name === 'Model') { return mongoid_Model }
 
