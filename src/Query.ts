@@ -16,7 +16,7 @@ export default class Query<M extends Model> {
   // #region Properties
 
   public copy(): Query<M> {
-    const copy = new Query<M>(this.Model)
+    const copy        = new Query<M>(this.Model)
     copy._filters     = cloneDeep(this._filters)
     copy._sorts       = cloneDeep(this._sorts)
     copy._projections = {...this._projections}
@@ -62,7 +62,7 @@ export default class Query<M extends Model> {
 
   public filter(...filters: Record<string, any>[]): Query<M> {
     const copy = this.copy()
-    copy._filters = filters.map(removeUndefineds)
+    copy._filters.push(...filters.map(removeUndefineds))
     return copy
   }
 
