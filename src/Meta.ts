@@ -9,7 +9,7 @@ import { ID, Index, ModelClass, ModelConfig } from './typings'
 
 export default class Meta<M extends Model> {
 
-  //------
+  // ------
   // Construction
 
   constructor(
@@ -32,7 +32,7 @@ export default class Meta<M extends Model> {
   public idToMongo(id: ID): ID {
     if (this.config.idAdapter != null) {
       return this.config.idAdapter.toMongo(id)
-    } else if (config.idAdapter != null ) {
+    } else if (config.idAdapter != null) {
       return config.idAdapter.toMongo(id)
     } else {
       return id
@@ -56,7 +56,7 @@ export default class Meta<M extends Model> {
     ]
   }
 
-  //------
+  // ------
   // Schema
 
   public async generateID(model: Model): Promise<ID> {

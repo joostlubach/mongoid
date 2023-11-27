@@ -6,7 +6,7 @@ export interface VirtualOptions {
 
 export function virtual(options: TypeOptions<any> & VirtualOptions = {}): Type<any, any> {
   return {
-    name: 'virtual',
+    name:    'virtual',
     options: {
       required: false,
       virtual:  true,

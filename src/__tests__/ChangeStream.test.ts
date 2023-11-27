@@ -13,7 +13,6 @@ import { Parent } from './datamodel'
 
 const describe = process.env.CHANGE_STREAMS === '0' ? global.describe.skip : global.describe
 describe("ChangeStream", () => {
-
   let client:    MongoClient
   let backend:   ModelBackend<Parent>
 
@@ -21,7 +20,7 @@ describe("ChangeStream", () => {
   let _semaphore: ValuedSemaphore<any>
 
   beforeEach(async () => {
-    client  = await testClient()
+    client = await testClient()
     backend = new ModelBackend(client, Parent)
   })
 
@@ -31,9 +30,7 @@ describe("ChangeStream", () => {
   })
 
   describe("raw interface", () => {
-
     describe('insert', () => {
-
       test("receiving insert changes", async () => {
         const {semaphore} = await createStream<ChangeStreamInsertDocument>()
 
@@ -56,14 +53,12 @@ describe("ChangeStream", () => {
           children:    [],
           createdAt:   expect.any(Date),
           updatedAt:   expect.any(Date),
-          _references: []
+          _references: [],
         })
       })
-
     })
 
     describe('update', () => {
-
       let parent: Parent
 
       beforeEach(async () => {
@@ -121,11 +116,9 @@ describe("ChangeStream", () => {
           truncatedArrays: [],
         })
       })
-
     })
 
     describe('delete', () => {
-
       let parent: Parent
 
       beforeEach(async () => {
@@ -160,13 +153,12 @@ describe("ChangeStream", () => {
         const change = await semaphore
         expect(change.fullDocumentBeforeChange).toBeDefined()
       })
-
     })
 
     async function createStream<D extends ChangeStreamDocument>(options: ChangeStreamOptions<any> = {}) {
-      const stream    = ChangeStream.watchModel(backend, options)
+      const stream = ChangeStream.watchModel(backend, options)
       const semaphore = new ValuedSemaphore<D>({timeout: 200})
-      const handler   = jest.fn<void, [D]>().mockImplementation(doc => {
+      const handler = jest.fn<void, [D]>().mockImplementation(doc => {
         semaphore.signal(doc)
       })
 
@@ -175,18 +167,15 @@ describe("ChangeStream", () => {
       // For some reason, MongoDB needs to use the event loop to start the stream.
       await delay(0)
 
-      _stream    = stream
+      _stream = stream
       _semaphore = semaphore
 
       return {stream, semaphore}
     }
-
   })
 
   describe("model interface", () => {
-
     describe('insert', () => {
-
       test("receiving .Create changes", async () => {
         const {semaphore} = await createStream()
 
@@ -206,22 +195,20 @@ describe("ChangeStream", () => {
             updatedAt:   {prevValue: undefined, nextValue: expect.any(Date)},
             createdAt:   {prevValue: undefined, nextValue: expect.any(Date)},
             _references: {prevValue: undefined, nextValue: []},
-          }
+          },
         })
       })
-
     })
 
     describe('update', () => {
-
       let parent: Parent
 
       beforeEach(async () => {
         // For updates, we turn this on to allow fullDocumentBeforeChange to be set.
         await backend.client.db().createCollection('parents', {
           changeStreamPreAndPostImages: {
-            enabled: true
-          }
+            enabled: true,
+          },
         })
 
         parent = await backend.create({name: "Parent 1"})
@@ -241,7 +228,7 @@ describe("ChangeStream", () => {
           {
             name:      {prevValue: UNKNOWN, nextValue: "Parent 2"},
             updatedAt: {prevValue: UNKNOWN, nextValue: expect.any(Date)},
-          }
+          },
         ))
       })
 
@@ -259,14 +246,12 @@ describe("ChangeStream", () => {
           {
             name:      {prevValue: "Parent 1", nextValue: "Parent 2"},
             updatedAt: {prevValue: expect.any(Date), nextValue: expect.any(Date)},
-          }
+          },
         ))
       })
-
     })
 
     describe('delete', () => {
-
       let parent: Parent
 
       beforeEach(async () => {
@@ -283,16 +268,15 @@ describe("ChangeStream", () => {
           ModelChangeType.Delete,
           Parent,
           parent.id,
-          {}
+          {},
         ))
       })
-
     })
 
     async function createStream(options: ChangeStreamOptions<Parent> = {}) {
-      const stream    = ChangeStream.watchModel(backend, options)
+      const stream = ChangeStream.watchModel(backend, options)
       const semaphore = new ValuedSemaphore<ModelChange<Parent>>({timeout: 200})
-      const handler   = jest.fn<void, [ModelChange<Parent>]>().mockImplementation(doc => {
+      const handler = jest.fn<void, [ModelChange<Parent>]>().mockImplementation(doc => {
         semaphore.signal(doc)
       })
 
@@ -306,8 +290,5 @@ describe("ChangeStream", () => {
 
       return {stream, semaphore}
     }
-
   })
-
-
 })

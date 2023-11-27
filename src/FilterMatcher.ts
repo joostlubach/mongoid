@@ -1,10 +1,10 @@
-import { every, isArray, isEqual, isObject, size, some } from 'lodash'
-import { arrayEquals, isPlainObject, objectEntries, objectEquals, objectKeys } from 'ytil'
+import { every, isArray, isEqual, size, some } from 'lodash'
+import { arrayEquals, isPlainObject, objectEntries, objectEquals, objectKeys, isObject, UnknownObject } from 'ytil'
 
 export default class FilterMatcher {
 
   constructor(
-    private readonly filters: Record<string, any>
+    private readonly filters: Record<string, any>,
   ) {}
 
   public matches(doc: any) {
@@ -13,7 +13,7 @@ export default class FilterMatcher {
 
   private matchFilter(doc: any, condition: any) {
     const lhsKeys = isPlainObject(condition)
-      ? objectKeys(condition).filter(it => it.startsWith('$'))
+      ? objectKeys(condition).filter(it => typeof it === 'string' && it.startsWith('$'))
       : []
     if (lhsKeys.length > 0 && lhsKeys.length < objectKeys(condition).length) {
       throw new Error("Cannot mix TopLevel and Value filters")
@@ -70,7 +70,7 @@ export default class FilterMatcher {
     //    on the entire value. Other keys are interpreted as a condition for a nested property.
     if (isPlainObject(condition)) {
       for (const [key, cond] of objectEntries(condition)) {
-        if (key.charAt(0) === '$') {
+        if (typeof key === 'string' && key.charAt(0) === '$') {
           const matcher = VALUE[key]
           if (matcher == null) { throw new Error(`Unknown filter operator: ${String(key)}`) }
 
@@ -95,7 +95,7 @@ export default class FilterMatcher {
 }
 
 type TopLevelMatcherFunction = (fragment: any, condition: any, recurse: (fragment: any, condition: any) => boolean) => boolean
-type ValueMatcherFunction    = (value: any, condition: any, recurse: (value: any, condition: any) => boolean) => boolean
+type ValueMatcherFunction = (value: any, condition: any, recurse: (value: any, condition: any) => boolean) => boolean
 
 const TOPLEVEL: Record<string, TopLevelMatcherFunction> = {
 
@@ -139,11 +139,9 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     if (value instanceof Date) {
       if (condition instanceof Date) {
         return value.getTime() === condition.getTime()
-      }
-      else if (typeof condition == 'number') {
+      } else if (typeof condition === 'number') {
         return value.getTime() === condition
-      }
-      else if (typeof condition == 'string') {
+      } else if (typeof condition === 'string') {
         return value.getTime() === (new Date(condition)).getTime()
       }
     }
@@ -152,7 +150,7 @@ const VALUE: Record<string, ValueMatcherFunction> = {
       return arrayEquals(value, condition)
     }
 
-    if (isObject(value) && isObject(condition)) {
+    if (isObject<UnknownObject>(value) && isObject<UnknownObject>(condition)) {
       return objectEquals(value, condition)
     }
 
@@ -169,7 +167,6 @@ const VALUE: Record<string, ValueMatcherFunction> = {
 
   $not(value, condition, recurse) {
     return !recurse(value, condition)
-
   },
 
   $ne(value, condition, recurse) {
@@ -211,7 +208,7 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     }
     if (value == null) { return false }
 
-    value     = value.toString().toLowerCase()
+    value = value.toString().toLowerCase()
     condition = condition.toString().toLowerCase()
     return value.includes(condition)
   },
@@ -222,7 +219,7 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     }
     if (value == null) { return false }
 
-    value     = value.toString()
+    value = value.toString()
     condition = condition.toString()
     return value.includes(condition)
   },
@@ -233,7 +230,7 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     }
     if (value == null) { return false }
 
-    return value.toString().startsWith(condition);
+    return value.toString().startsWith(condition)
   },
 
   $endsWith(value, condition) {
@@ -242,7 +239,7 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     }
     if (value == null) { return false }
 
-    return value.toString().endsWith(condition);
+    return value.toString().endsWith(condition)
   },
 
   $elemMatch(value, condition, recurse) {
@@ -265,7 +262,7 @@ const VALUE: Record<string, ValueMatcherFunction> = {
 
   $regex(value, condition) {
     const values = isArray(value) ? value : [value]
-    const regex  = condition instanceof RegExp ? condition : new RegExp(condition)
+    const regex = condition instanceof RegExp ? condition : new RegExp(condition)
     return every(values, it => regex.test(it))
   },
 
@@ -302,20 +299,40 @@ const VALUE: Record<string, ValueMatcherFunction> = {
 
   $before(value, ref) {
     value = value instanceof Date ? value : new Date(value)
-    ref   = ref instanceof Date ? ref : new Date(ref)
+    ref = ref instanceof Date ? ref : new Date(ref)
 
     return value < ref
   },
 
   $after(value, ref) {
     value = value instanceof Date ? value : new Date(value)
-    ref   = ref instanceof Date ? ref : new Date(ref)
+    ref = ref instanceof Date ? ref : new Date(ref)
 
     return value > ref
   },
 
   $type(values, ref) {
-    return typeof values == ref
+    if (ref === 'string') {
+      return typeof values === 'string'
+    } else if (ref === 'number') {
+      return typeof values === 'number'
+    } else if (ref === 'boolean') {
+      return typeof values === 'boolean'
+    } else if (ref === 'array') {
+      return isArray(values)
+    } else if (ref === 'object') {
+      return isPlainObject(values)
+    } else if (ref === 'date') {
+      return values instanceof Date
+    } else if (ref === 'regex') {
+      return values instanceof RegExp
+    } else if (ref === 'null') {
+      return values === null
+    } else if (ref === 'undefined') {
+      return values === undefined
+    } else {
+      return values instanceof ref
+    }
   },
 
   $size(values, ref) {
@@ -332,6 +349,6 @@ const VALUE: Record<string, ValueMatcherFunction> = {
 
   $equal(value, ref, recurse) {
     return VALUE.$eq(value, ref, recurse)
-  }
+  },
 
 }

@@ -6,19 +6,17 @@ import { testClient } from './client'
 import { Parent } from './datamodel'
 
 describe("ID", () => {
-
   let parent: Parent
   let client: MongoClient
   let backend: ModelBackend<Parent>
 
   beforeEach(async () => {
-    parent  = new Parent()
-    client  = await testClient()
+    parent = new Parent()
+    client = await testClient()
     backend = new ModelBackend(client, Parent)
   })
 
   describe("ID generators", () => {
-
     beforeEach(() => {
       parent.meta.config.idGenerator = customIdGenerator
     })
@@ -60,26 +58,24 @@ describe("ID", () => {
       await backend.save(parent)
 
       expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-        _id: 'foo'
+        _id: 'foo',
       }), expect.anything())
     })
-
   })
 
   describe("ID adapters", () => {
-
     beforeEach(() => {
       parent.meta.config.idGenerator = customIdGenerator
-      parent.meta.config.idAdapter   = customIdAdapter
+      parent.meta.config.idAdapter = customIdAdapter
     })
 
     afterEach(() => {
       parent.meta.config.idGenerator = undefined
-      parent.meta.config.idAdapter   = undefined
+      parent.meta.config.idAdapter = undefined
     })
 
     test("ID adapter", async () => {
-      const toMongo   = parent.meta.idToMongo('foo')
+      const toMongo = parent.meta.idToMongo('foo')
       const fromMongo = parent.meta.idFromMongo('FOO')
 
       expect(toMongo).toEqual('FOO')
@@ -88,15 +84,15 @@ describe("ID", () => {
 
     test("config fallback", async () => {
       parent.meta.config.idGenerator = undefined
-      parent.meta.config.idAdapter   = undefined
+      parent.meta.config.idAdapter = undefined
 
       configure({
         idGenerator: customIdGenerator,
         idAdapter:   customIdAdapter,
       })
 
-      const id        = await parent.meta.generateID(parent)
-      const toMongo   = parent.meta.idToMongo('bar')
+      const id = await parent.meta.generateID(parent)
+      const toMongo = parent.meta.idToMongo('bar')
       const fromMongo = parent.meta.idFromMongo('BAR')
 
       expect(parent.meta.config.idAdapter).toBeUndefined()
@@ -111,7 +107,7 @@ describe("ID", () => {
       await backend.query(query).find()
 
       expect(spy).toHaveBeenCalledWith(
-        {$and: [{_id: 'FOO'}]}
+        {$and: [{_id: 'FOO'}]},
       )
     })
 
@@ -129,7 +125,7 @@ describe("ID", () => {
 
       expect(spy).toHaveBeenCalledWith(
         expect.objectContaining({_id: 'FOO'}),
-        expect.anything()
+        expect.anything(),
       )
     })
 
@@ -143,16 +139,14 @@ describe("ID", () => {
       expect(spy).toHaveBeenCalledWith(
         {_id: 'FOO'},
         expect.anything(),
-        expect.anything()
+        expect.anything(),
       )
     })
-
   })
-
 })
 
 const customIdGenerator = () => 'foo'
-const customIdAdapter   = {
+const customIdAdapter = {
   toMongo:   (id: string) => id.toUpperCase(),
-  fromMongo: (id: ID)     => id.toString().toLowerCase()
+  fromMongo: (id: ID) => id.toString().toLowerCase(),
 }

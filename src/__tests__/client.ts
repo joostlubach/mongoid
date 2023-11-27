@@ -10,7 +10,7 @@ export async function testClient() {
   const prefix = `mongoid-test-`
   const suffix = slugify(expect.getState().currentTestName ?? testSeed())
   const dbName = process.env.MONGODB_DBNAME ?? `${prefix}${truncate(suffix, 36 - prefix.length, {anchor: 'end', omission: ''})}`
-  const url    = process.env.MONGODB_URL ?? `mongodb://localhost:27017/${dbName}`
+  const url = process.env.MONGODB_URL ?? `mongodb://localhost:27017/${dbName}`
   _client = new MongoClient(url)
   await _client.connect()
 
@@ -33,9 +33,9 @@ async function dropTestDatabases() {
   const client = new MongoClient('mongodb://localhost:27017')
   await client.connect()
 
-  const dbs      = await client.db().admin().listDatabases()
-  const prefix   = 'mongoid:test-'
-  const names    = dbs.databases.filter(db => db.name.startsWith(prefix)).map(db => db.name)
+  const dbs = await client.db().admin().listDatabases()
+  const prefix = 'mongoid:test-'
+  const names = dbs.databases.filter(db => db.name.startsWith(prefix)).map(db => db.name)
   const promises = names.map(it => client.db(it).dropDatabase())
   await Promise.all(promises)
 

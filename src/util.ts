@@ -20,7 +20,6 @@ export async function withClientStackTrace<T>(fn: () => PromiseLike<T> | T): Pro
   }
 }
 
-
 export function deepMapKeys(arg: any, fn: (key: string | symbol) => any): any {
   if (isPlainObject(arg)) {
     const result: Record<string, any> = {}

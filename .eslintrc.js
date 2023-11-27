@@ -1,5 +1,5 @@
 module.exports = {
-  extends: '../../.eslintrc.client.yml',
+  extends: '../../.eslintrc.yml',
   ignorePatterns: ['/.eslintrc.js'],
   parserOptions: {
     project: './tsconfig.json',

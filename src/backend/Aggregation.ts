@@ -19,7 +19,7 @@ export default class Aggregation<M extends Model> {
   constructor(
     private client: MongoClient,
     private backend: ModelBackend<M> | null,
-    private pipeline: AggregationPipelineRaw
+    private pipeline: AggregationPipelineRaw,
   ) {
     this.collection = client.db().collection(pipeline.collection)
   }
@@ -35,7 +35,7 @@ export default class Aggregation<M extends Model> {
     return getModelMeta(this.Model)
   }
 
-  //------
+  // ------
   // Data retrieval
 
   /**

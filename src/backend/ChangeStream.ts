@@ -26,15 +26,15 @@ export default class ChangeStream<M extends Model> {
   constructor(
     private readonly backend: (Model: ModelClass<M>) => ModelBackend<M>,
     private readonly stream: mongo_ChangeStream,
-    private readonly options: ChangeStreamOptions<M> = {}
+    private readonly options: ChangeStreamOptions<M> = {},
   ) {
     stream.on('change', this.handleChange.bind(this))
 
-    this.on  = this.stream.on.bind(this.stream)
+    this.on = this.stream.on.bind(this.stream)
     this.off = this.stream.off.bind(this.stream)
   }
 
-  public readonly on: typeof mongo_ChangeStream.prototype.on
+  public readonly on:  typeof mongo_ChangeStream.prototype.on
   public readonly off: typeof mongo_ChangeStream.prototype.off
 
   // #region Lifecycle
@@ -50,8 +50,8 @@ export default class ChangeStream<M extends Model> {
   }
 
   public static watchModel<M extends Model>(backend: ModelBackend<M>, options: ChangeStreamOptions<M> = {}) {
-    const db         = backend.client.db()
-    const stages     = options.pipeline?.serialize().stages
+    const db = backend.client.db()
+    const stages = options.pipeline?.serialize().stages
     const collection = db.collection(getModelMeta(backend.Model).collectionName)
     return new ChangeStream<M>(() => backend, collection.watch(stages, ChangeStreamOptions.toMongo(options)))
   }
@@ -60,7 +60,7 @@ export default class ChangeStream<M extends Model> {
 
   // #region Listeners
 
-  private listeners    = new Set<ChangeListener<any>>()
+  private listeners = new Set<ChangeListener<any>>()
   private rawListeners = new Set<RawChangeListener>()
 
   public addListener(listener: RawChangeListener, options?: ChangeListenerOptions & {raw: true}): void
@@ -90,7 +90,7 @@ export default class ChangeStream<M extends Model> {
     if (Model == null) { return }
 
     const backend = this.backend(Model as ModelClass<M>)
-    const change  = await ModelChange.fromMongoChangeStreamDocument<M>(backend, doc)
+    const change = await ModelChange.fromMongoChangeStreamDocument<M>(backend, doc)
     for (const listener of this.listeners) {
       listener(change)
     }
@@ -121,9 +121,9 @@ const ChangeStreamOptions: {
     return {
       fullDocument:             full ? 'updateLookup' : undefined,
       fullDocumentBeforeChange: full ? 'whenAvailable' : undefined,
-      ...rest
+      ...rest,
     }
-  }
+  },
 }
 
 export type ChangeListener<M extends Model> = (change: ModelChange<M>) => void

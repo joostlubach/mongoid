@@ -3,22 +3,22 @@ import { array, number, ref, string } from '../types'
 import { TypedModel } from '../typings'
 
 const parentSchema = {
-  name: string(),
-  age:  number({required: false}),
+  name:     string(),
+  age:      number({required: false}),
   children: array({
     itemType: ref({model: 'Child'}),
-    default:  () => []
-  })
+    default:  () => [],
+  }),
 }
 
 const childSchema = {
-  name:   string(),
-  age:    number({required: false}),
-  parent: ref<Parent>({model: 'Parent'}),
+  name:     string(),
+  age:      number({required: false}),
+  parent:   ref<Parent>({model: 'Parent'}),
   siblings: array({
     itemType: ref({model: 'Child'}),
-    default:  () => []
-  })
+    default:  () => [],
+  }),
 }
 
 const petSchema = {

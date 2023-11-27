@@ -9,7 +9,7 @@ export default class Cursor<M extends Model> {
     public readonly cursor: mongo_Cursor | AggregationCursor,
   ) {}
 
-  public async *[Symbol.asyncIterator]() {
+  public async * [Symbol.asyncIterator]() {
     for await (const document of this.cursor) {
       yield await this.backend.hydrate(document) as M
     }
@@ -35,7 +35,7 @@ export default class Cursor<M extends Model> {
 
   public async toArray(): Promise<M[]> {
     const documents = await this.cursor.toArray()
-    const promises  = documents.map(doc => this.backend.hydrate(doc))
+    const promises = documents.map(doc => this.backend.hydrate(doc))
     return await Promise.all(promises)
   }
 

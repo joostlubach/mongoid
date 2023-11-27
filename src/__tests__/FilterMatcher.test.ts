@@ -1,20 +1,19 @@
 import FilterMatcher from '../FilterMatcher'
 
 describe("FilterMatcher", () => {
-
   it("should match simple filters", () => {
     expect(matches({}, {})).toBe(true)
     expect(matches({a: 1}, {})).toBe(true)
     expect(matches({
-      num: 1,
-      str: 'foo',
+      num:  1,
+      str:  'foo',
       date: new Date(2023, 9, 13, 13, 0, 0),
-      bool: true
+      bool: true,
     }, {
       num:  1,
-      str: 'foo',
+      str:  'foo',
       date: new Date(2023, 9, 13, 13, 0, 0),
-      bool: true
+      bool: true,
     })).toBe(true)
   })
 
@@ -32,7 +31,6 @@ describe("FilterMatcher", () => {
   })
 
   describe("arrays", () => {
-
     it("should do an exact array comparison if both value and condition are arrays", () => {
       expect(matches({arr: [1, 'foo', true]}, {arr: [1, 'foo', true]})).toBe(true)
       expect(matches({arr: [1, 'foo', true]}, {arr: [2, 'foo', true]})).toBe(false)
@@ -48,11 +46,9 @@ describe("FilterMatcher", () => {
       expect(matches({arr: [1, 'foo', true]}, {arr: {$in: [1, 'foo', true]}})).toBe(true)
       expect(matches({arr: [1, 'foo', true]}, {arr: {$in: [1, true, 'foo']}})).toBe(true)
     })
-
   })
 
   describe("top-level matchers", () => {
-
     test("$not", () => {
       const doc = {a: 1, b: 2, c: 3}
       expect(matches(doc, {$not: {a: 2}})).toBe(true)
@@ -88,11 +84,9 @@ describe("FilterMatcher", () => {
     })
 
     test.todo('$expr')
-
   })
 
   describe("value matchers", () => {
-
     test('$cb', () => {
       const doc = {a: 1}
       expect(matches(doc, {a: {$cb: (val: any) => val === 1}})).toBe(true)
@@ -105,9 +99,8 @@ describe("FilterMatcher", () => {
       ${'$equal'} | ${false}
       ${'$ne'}    | ${true}
     `('$operator', ({operator, inverted}) => {
-
-      const TRUE  = inverted ? false : true
-      const FALSE = inverted ? true : false
+      const TRUE = !inverted
+      const FALSE = !!inverted
 
       it("should match exact values", () => {
         expect(matches({a: 1}, {a: {[operator]: 1}})).toBe(TRUE)
@@ -129,7 +122,6 @@ describe("FilterMatcher", () => {
           expect(matches({a: [1, 2, 3]}, {a: {[operator]: 3}})).toBe(TRUE)
           expect(matches({a: [1, 2, 3]}, {a: {[operator]: 4}})).toBe(FALSE)
         })
-
       }
 
       it("should match objects", () => {
@@ -139,8 +131,8 @@ describe("FilterMatcher", () => {
       })
 
       it("should match dates", () => {
-        const now1  = new Date(2023, 9, 13, 13, 0)
-        const now2  = new Date(2023, 9, 13, 13, 0)
+        const now1 = new Date(2023, 9, 13, 13, 0)
+        const now2 = new Date(2023, 9, 13, 13, 0)
         const later = new Date(2023, 9, 13, 13, 1)
 
         expect(matches({a: now1}, {a: {[operator]: now1}})).toBe(TRUE)
@@ -149,12 +141,11 @@ describe("FilterMatcher", () => {
         expect(matches({a: now1}, {a: {[operator]: now2}})).toBe(TRUE)
         expect(matches({a: now1}, {a: {[operator]: later}})).toBe(FALSE)
       })
-
     })
 
     test("$eq should be value matcher without operator", () => {
-      const now1  = new Date(2023, 9, 13, 13, 0)
-      const now2  = new Date(2023, 9, 13, 13, 0)
+      const now1 = new Date(2023, 9, 13, 13, 0)
+      const now2 = new Date(2023, 9, 13, 13, 0)
       const later = new Date(2023, 9, 13, 13, 1)
 
       expect(matches({a: 1}, {a: 1})).toBe(true)
@@ -174,33 +165,31 @@ describe("FilterMatcher", () => {
     })
 
     test('$exists', () => {
-
       // It should match if a field exists and is not undefined. MongoDB converts all explicit
       // `undefined`s to `null`s so we correspond to MongoDB.
       expect(matches({
         a: 1,
         b: null,
-        c: undefined
+        c: undefined,
       }, {
         a: {$exists: true},
         b: {$exists: true},
         c: {$exists: false},
-        d: {$exists: false}
+        d: {$exists: false},
       })).toBe(true)
 
       expect(matches({
         a: 1,
         b: null,
-        c: undefined
+        c: undefined,
       }, {
         $or: [
           {a: {$exists: false}},
           {b: {$exists: false}},
           {c: {$exists: true}},
-          {d: {$exists: true}}
-        ]
+          {d: {$exists: true}},
+        ],
       })).toBe(false)
-
     })
 
     test('$elemMatch', () => {
@@ -245,12 +234,10 @@ describe("FilterMatcher", () => {
     test.todo('$size')
     test.todo('$mod')
     test.todo('$equal')
-
   })
 
   function matches(obj: any, filters: Record<string, any>) {
     const tester = new FilterMatcher(filters)
     return tester.matches(obj)
   }
-
 })

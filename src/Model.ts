@@ -10,7 +10,7 @@ import { ID, ModelClass, ModelRaw } from './typings'
 
 export default class Model {
 
-  //------
+  // ------
   // Constructor & properties
 
   constructor(attributes: Record<string, any> = {}) {
@@ -21,7 +21,7 @@ export default class Model {
     Object.assign(this, {id, ...coerced})
   }
 
-  public id:        ID = null!
+  public id: ID = null!
 
   public originals: Record<string, any> = {}
 
@@ -200,11 +200,10 @@ export default class Model {
 
     Object.assign(this, coerced)
 
-
     this.originals = cloneDeep(this.attributes as Partial<this>)
-    this.id         = id!
-    this.updatedAt  = updatedAt instanceof DateTime ? updatedAt : DateTime.fromJSDate(updatedAt)
-    this.createdAt  = createdAt instanceof DateTime ? createdAt : DateTime.fromJSDate(createdAt)
+    this.id = id!
+    this.updatedAt = updatedAt instanceof DateTime ? updatedAt : DateTime.fromJSDate(updatedAt)
+    this.createdAt = createdAt instanceof DateTime ? createdAt : DateTime.fromJSDate(createdAt)
     this.markPersisted()
   }
 
@@ -266,7 +265,7 @@ export default class Model {
 
   // #endregion
 
-  //------
+  // ------
   // Querying & loading
 
   /**

@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { isArray, some, uniq } from 'lodash'
-import { flatMap, MapBuilder, modifyInObject, splitArray } from 'ytil'
+import { flatMap, MapBuilder, modifyInObject, splitArray, isPlainObject } from 'ytil'
 import config from '../config'
 import Model from '../Model'
 import { getAllModelClasses, getModelClass } from '../registry'
@@ -12,7 +12,7 @@ export default class ReferentialIntegrity<M extends Model> {
 
   constructor(
     private readonly backend: ModelBackend<M>,
-    private readonly model: M
+    private readonly model: M,
   ) {}
 
   private get Model() {
@@ -107,16 +107,19 @@ export default class ReferentialIntegrity<M extends Model> {
       if (options.onDelete === 'ignore') { return }
 
       const strategy =
-        options.onDelete === 'delete' ? 'delete' :
-        options.onDelete === 'disallow' ? 'disallow' :
-        options.onDelete === 'cascade' ? 'cascade' :
-        'other'
+        options.onDelete === 'delete'
+          ? 'delete'
+          : options.onDelete === 'disallow'
+            ? 'disallow'
+            : options.onDelete === 'cascade'
+              ? 'cascade'
+              : 'other'
 
       references.push({
-        path:     path,
-        model:    value.Model.name,
-        id:       value.id,
-        strategy: strategy,
+        path,
+        model: value.Model.name,
+        id:    value.id,
+        strategy,
       })
     })
 
@@ -144,7 +147,7 @@ export default class ReferentialIntegrity<M extends Model> {
 
       for (const item of items) {
         affectedModels.push({
-          Model:      Model,
+          Model,
           id:         item._id,
           references: item._references.filter((ref: Reference) => (
             ref.model === Model.modelName && ref.id === this.model.id
@@ -169,7 +172,7 @@ export default class ReferentialIntegrity<M extends Model> {
     const [deletedModels, rest] = splitArray(affectedModels, it => some(it.references, it => it.strategy === 'cascade' || it.strategy === 'delete'))
 
     // For those models that remain, check if any of them disallow the deletion. If so, throw an error.
-    const references           = flatMap(rest, model => model.references)
+    const references = flatMap(rest, model => model.references)
     const disallowedReferences = references.filter(ref => ref.strategy === 'disallow')
     if (disallowedReferences.length > 0) {
       throw new ReferentialIntegrityError("Deletion disallowed due to referential integrity rules", disallowedReferences)
@@ -229,10 +232,10 @@ export default class ReferentialIntegrity<M extends Model> {
       if (strategy === 'unset') {
         if (isArray(parent)) {
           parent.splice(key as number, 1)
-        } else {
+        } else if (isPlainObject(parent)) {
           parent[key] = null
         }
-      } else if (RefDeleteStrategy.isSetStrategy(strategy)) {
+      } else if (isPlainObject(parent) && RefDeleteStrategy.isSetStrategy(strategy)) {
         parent[key] = strategy.$set
       } else {
         return false
@@ -241,8 +244,7 @@ export default class ReferentialIntegrity<M extends Model> {
   }
 
   private logDeletion(affected: AffectedModel[]) {
-
-    const modelDesc         = `${this.Model.name} ${this.model.id}`
+    const modelDesc = `${this.Model.name} ${this.model.id}`
     const affectedModelDesc = (model: AffectedModel) => `${model.Model.name} ${model.id}`
 
     if (affected.length === 0) {
@@ -288,7 +290,7 @@ export class ReferentialIntegrityError extends Error {
 
   constructor(
     message: string,
-    public disallowedReferences: Reference[]
+    public disallowedReferences: Reference[],
   ) {
     super(message)
   }

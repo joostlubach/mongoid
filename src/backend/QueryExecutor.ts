@@ -23,7 +23,7 @@ export default class QueryExecutor<M extends Model> {
   constructor(
     private readonly backend: ModelBackend<M>,
     private readonly query: Query<M>,
-    private readonly options: QueryExecutorOptions = {}
+    private readonly options: QueryExecutorOptions = {},
   ) {}
 
   private get Model() {
@@ -107,7 +107,7 @@ export default class QueryExecutor<M extends Model> {
 
   public async find(): Promise<M[]> {
     return await withClientStackTrace(
-      () => this.runQuery(this.query).toArray()
+      () => this.runQuery(this.query).toArray(),
     )
   }
 
@@ -154,19 +154,19 @@ export default class QueryExecutor<M extends Model> {
 
   public async updateAll(updates: Record<string, any>): Promise<UpdateResult> {
     return await withClientStackTrace(
-      () => this.collection.updateMany(this.filters, updates)
+      () => this.collection.updateMany(this.filters, updates),
     )
   }
 
   public async deleteOne(): Promise<DeleteResult> {
     return await withClientStackTrace(
-      () => this.collection.deleteOne(this.filters)
+      () => this.collection.deleteOne(this.filters),
     )
   }
 
   public async deleteAll(): Promise<DeleteResult> {
     return await withClientStackTrace(
-      () => this.collection.deleteMany(this.filters)
+      () => this.collection.deleteMany(this.filters),
     )
   }
 
@@ -190,7 +190,7 @@ export default class QueryExecutor<M extends Model> {
    */
   public async explain() {
     return await withClientStackTrace(
-      () => this.raw().explain()
+      () => this.raw().explain(),
     )
   }
 

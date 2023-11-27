@@ -36,7 +36,7 @@ export type PolyModelConfig<SM extends ObjectSchemaMap> = ConfigCommon & {
   schemas:     SM
 }
 
-//------
+// ------
 // Misc
 
 export interface ModelClass<M extends Model> extends Omit<typeof Model, 'new' | 'meta' | 'prototype'> {
@@ -90,17 +90,17 @@ export type DynamicIndex<M extends Model> = (model: M) => Promise<Primitive>
 export type ViewFunction<M extends Model> = (pipeline: AggregationPipeline<M>) => void
 export type Primitive = string | number | boolean | null | undefined
 
-export type SimpleIndex      = Record<string, number | 'text' | undefined>
+export type SimpleIndex = Record<string, number | 'text' | undefined>
 export type IndexWithOptions = [SimpleIndex, CreateIndexesOptions]
 
-export type UniqueMap  = Record<string, boolean | UniqueSpec>
+export type UniqueMap = Record<string, boolean | UniqueSpec>
 export interface UniqueSpec {
   scope?: string[]
   query?: (query: Query<any>, subject: any) => Query<any>
   if?:    (subject: any) => boolean
 }
 
-export type MonomorphicModelClassOf<S extends ObjectSchema>     = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & SchemaInstance<S>)
+export type MonomorphicModelClassOf<S extends ObjectSchema> = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & SchemaInstance<S>)
 export type PolymorphicModelClassOf<SM extends ObjectSchemaMap> = Omit<typeof Model, 'new'> & (new (attributes?: Record<string, any>) => Model & MergedPolySchemaInstance<SM>)
 
 export function TypedModel<S extends ObjectSchema>(schema: S): MonomorphicModelClassOf<S>

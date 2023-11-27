@@ -11,7 +11,7 @@ export default class InvalidModelError<M extends Model> extends Error {
     const message = stripAnsi(InvalidModelError.description(Model, result))
     super(message)
 
-    this.Model  = Model
+    this.Model = Model
     this.result = result
   }
 

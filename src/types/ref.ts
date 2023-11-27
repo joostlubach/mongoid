@@ -45,7 +45,7 @@ export type RefDeleteStrategy<TParent extends Model> =
 export type CustomDeleteStrategy<TParent extends Model> = ((model: TParent, reference: Reference) => boolean | Promise<boolean>)
 
 export const RefDeleteStrategy: {
-  isSetStrategy: (strategy: RefDeleteStrategy<any>) => strategy is {$set: ID}
+  isSetStrategy:    (strategy: RefDeleteStrategy<any>) => strategy is {$set: ID}
   isCustomStrategy: <TParent extends Model>(strategy: RefDeleteStrategy<TParent>) => strategy is CustomDeleteStrategy<TParent>
 } = {
   isSetStrategy: (strategy: RefDeleteStrategy<any>): strategy is {$set: ID} => {
@@ -53,7 +53,7 @@ export const RefDeleteStrategy: {
   },
   isCustomStrategy: <TParent extends Model>(strategy: RefDeleteStrategy<TParent>): strategy is CustomDeleteStrategy<TParent> => {
     return isFunction(strategy)
-  }
+  },
 }
 
 export function ref<TRef extends Model, TParent extends Model = any>(options: RefOptions<TRef, TParent> & {required: false}): OptionalType<Ref<TRef, TParent>, RefOptions<TRef, TParent>>
@@ -105,10 +105,10 @@ export class Ref<TRef extends Model, TParent extends Model = Model> {
   constructor(
     public readonly Model: ModelClass<TRef>,
     public readonly id: IDOf<TRef>,
-    options: Omit<RefOptions<TRef, TParent>, 'model'> = {}
+    options: Omit<RefOptions<TRef, TParent>, 'model'> = {},
   ) {
     this.foreignKey = options.foreignKey ?? 'id'
-    this.include    = options.include ?? 'auto'
+    this.include = options.include ?? 'auto'
   }
 
   public readonly foreignKey: string

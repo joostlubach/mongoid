@@ -22,18 +22,18 @@ export default class AggregationPipeline<M extends Model> {
 
   constructor(
     public ModelOrCollectionName: ModelClass<M> | string,
-    private _stages: Stage[] = []
+    private _stages: Stage[] = [],
   ) {
     if (typeof ModelOrCollectionName === 'string') {
-      this.Model          = null
+      this.Model = null
       this.collectionName = ModelOrCollectionName
     } else {
-      this.Model          = ModelOrCollectionName
+      this.Model = ModelOrCollectionName
       this.collectionName = getModelMeta(this.Model).collectionName
     }
   }
 
-  public readonly Model: ModelClass<M> | null
+  public readonly Model:          ModelClass<M> | null
   public readonly collectionName: string
 
   private _facetName: string | null = null
@@ -115,9 +115,9 @@ export default class AggregationPipeline<M extends Model> {
     const pipeline = initialPipeline ?? new AggregationPipeline(from, stages)
     this.addStage({
       $lookup: {
-        from:     fromCollection,
-        pipeline: pipeline,
-        ...rest
+        from: fromCollection,
+        pipeline,
+        ...rest,
       },
     })
 
@@ -223,7 +223,7 @@ export default class AggregationPipeline<M extends Model> {
 
     const facetStage = this._stages[this._stages.length - 1] as Record<'$facet', Record<string, Stage[] | {pipeline: AggregationPipeline<M>}>>
     if (typeof arg === 'string') {
-      const field    = arg
+      const field = arg
       const pipeline = new AggregationPipeline(this.Model ?? this.collectionName, [])
       pipeline._facetName = arg
       facetStage.$facet[field] = {pipeline}
@@ -281,8 +281,8 @@ export default class AggregationPipeline<M extends Model> {
       accumulate:     spec.accumulate.toString(),
       accumulateArgs: spec.accumulateArgs,
 
-      merge:     spec.merge.toString(),
-      finalize:  spec.finalize?.toString(),
+      merge:    spec.merge.toString(),
+      finalize: spec.finalize?.toString(),
     }
   }
 
@@ -294,7 +294,7 @@ export default class AggregationPipeline<M extends Model> {
     return {
       model:      this.Model?.name,
       collection: this.collectionName,
-      stages:     this.resolveStages()
+      stages:     this.resolveStages(),
     }
   }
 

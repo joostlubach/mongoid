@@ -7,7 +7,7 @@ import { ModelClass } from './typings'
 
 const HOOKS = new NestedWeakMap<[ModelClass<any>, HookName], Set<string | symbol>>()
 
-export type HookName      = keyof HookFunctions
+export type HookName = keyof HookFunctions
 export type HookFunctions = StaticHookFunctions & InstanceHookFunctions
 
 export type StaticHookFunctions = {
@@ -23,14 +23,13 @@ export type InstanceHookFunctions = {
   afterDelete:    AfterDeleteHook<any>
 }
 
-
-export type InitializeHook<M extends Model>     = (this: ModelClass<M>, backend: ModelBackend<M>) => any | Promise<any>
+export type InitializeHook<M extends Model> = (this: ModelClass<M>, backend: ModelBackend<M>) => any | Promise<any>
 export type BeforeValidateHook<M extends Model> = (this: M,) => any | Promise<any>
-export type ValidateHook<M extends Model>       = (this: M, result: ValidatorResult<M>,) => any | Promise<any>
-export type BeforeSaveHook<M extends Model>     = (this: M, backend: ModelBackend<M>,) => any | Promise<any>
-export type AfterSaveHook<M extends Model>      = (this: M, backend: ModelBackend<M>, created: boolean) => any | Promise<any>
-export type BeforeDeleteHook<M extends Model>   = (this: M, backend: ModelBackend<M>, ) => any | Promise<any>
-export type AfterDeleteHook<M extends Model>    = (this: M, backend: ModelBackend<M>, ) => any | Promise<any>
+export type ValidateHook<M extends Model> = (this: M, result: ValidatorResult<M>,) => any | Promise<any>
+export type BeforeSaveHook<M extends Model> = (this: M, backend: ModelBackend<M>,) => any | Promise<any>
+export type AfterSaveHook<M extends Model> = (this: M, backend: ModelBackend<M>, created: boolean) => any | Promise<any>
+export type BeforeDeleteHook<M extends Model> = (this: M, backend: ModelBackend<M>,) => any | Promise<any>
+export type AfterDeleteHook<M extends Model> = (this: M, backend: ModelBackend<M>,) => any | Promise<any>
 
 /**
  * Marks a method as a hook.
@@ -94,7 +93,7 @@ export async function callInstanceHook<M extends Model, H extends keyof Instance
 
 export function resolveHooks<M extends Model, H extends HookName>(Model: ModelClass<M>, name: H): Array<string | symbol> {
   const superPrototype = Object.getPrototypeOf(Model.prototype)
-  const SuperClass     = superPrototype && superPrototype.constructor
+  const SuperClass = superPrototype && superPrototype.constructor
 
   return [
     ...Array.from(HOOKS.get(Model, name) ?? []),

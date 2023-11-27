@@ -79,14 +79,13 @@ export function model<M extends mongoid_Model>(name: string, options: ModelOptio
     const config = {
       name,
       polymorphic: 'schemas' in options,
-      ...options
+      ...options,
     } as ModelConfig
 
     const meta = new Meta(ModelClass, config)
     REGISTRY.push([ModelClass, meta])
   }
 }
-
 
 export type ModelOptions = MonoModelOptions<any> | PolyModelOptions<any>
 

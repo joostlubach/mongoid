@@ -18,7 +18,7 @@ export default class ModelChange<M extends Model> {
     public readonly type:          ModelChangeType,
     public readonly Model:         ModelClass<M>,
     public readonly id:            ID,
-    public readonly modifications: Modifications<M>
+    public readonly modifications: Modifications<M>,
   ) {}
 
   // #region Record
@@ -28,7 +28,7 @@ export default class ModelChange<M extends Model> {
       type,
       model.ModelClass,
       model.id,
-      deriveModifications(model.originals as Partial<M>, model.meta.getAttributes(model, false))
+      deriveModifications(model.originals as Partial<M>, model.meta.getAttributes(model, false)),
     )
   }
 
@@ -41,7 +41,7 @@ export default class ModelChange<M extends Model> {
    */
   public static async record<M extends Model>(model: M, callback: () => Promise<void>) {
     const wasPersisted = model.isPersisted
-    const prevAttrs    = model.originals as Partial<M>
+    const prevAttrs = model.originals as Partial<M>
 
     await callback()
 
@@ -49,12 +49,14 @@ export default class ModelChange<M extends Model> {
     if (!wasPersisted && !isPersisted) { return null }
 
     const type =
-      !isPersisted ? ModelChangeType.Delete :
-      !wasPersisted ? ModelChangeType.Create :
-      ModelChangeType.Update
+      !isPersisted
+        ? ModelChangeType.Delete
+        : !wasPersisted
+            ? ModelChangeType.Create
+            : ModelChangeType.Update
 
-    const nextAttrs      = model.meta.getAttributes(model, false)
-    const modifications  = deriveModifications<M>(prevAttrs, nextAttrs)
+    const nextAttrs = model.meta.getAttributes(model, false)
+    const modifications = deriveModifications<M>(prevAttrs, nextAttrs)
     if (objectKeys(modifications).length > 0) {
       return new ModelChange(type, model.ModelClass, model.id, modifications)
     } else {
@@ -65,7 +67,6 @@ export default class ModelChange<M extends Model> {
   // #endregion
 
   // #region ChangeStream factories
-
 
   public static async fromMongoChangeStreamDocument<M extends Model>(backend: ModelBackend<M>, doc: ChangeStreamDocument) {
     switch (doc.operationType) {
@@ -88,7 +89,7 @@ export default class ModelChange<M extends Model> {
       ModelChangeType.Create,
       backend.Model,
       model.id,
-      deriveModifications({}, {id, ...rest} as Partial<M>)
+      deriveModifications({}, {id, ...rest} as Partial<M>),
     )
   }
 
@@ -115,7 +116,7 @@ export default class ModelChange<M extends Model> {
 
       change.modifications[field as keyof M] = {
         prevValue: doc.fullDocumentBeforeChange == null ? UNKNOWN : doc.fullDocumentBeforeChange[field],
-        nextValue: coerce(field, nextValue)
+        nextValue: coerce(field, nextValue),
       }
     }
 
@@ -176,7 +177,7 @@ export default class ModelChange<M extends Model> {
       ModelChangeType.Delete,
       Model,
       id,
-      {}
+      {},
     )
   }
 

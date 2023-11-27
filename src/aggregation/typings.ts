@@ -26,7 +26,7 @@ export interface LookupStage {
 export type LookupConfig = SimpleLookupConfig | PipelineLookupConfig<any>
 
 export interface CommonLookupConfig {
-  as:   string
+  as: string
 }
 
 export interface SimpleLookupConfig extends CommonLookupConfig {
@@ -96,7 +96,7 @@ export interface AccumulatorSpec<S, U = S, I extends any[] = [], A extends any[]
   merge:     (state1: S, state2: S) => S
   finalize?: (state: S) => U
 
-  lang?:      string
+  lang?: string
 }
 
 export interface AggregationPipelineRaw {

@@ -10,23 +10,23 @@ import { Filter, ModelClass, Sorts } from './typings'
 export default class Query<M extends Model> {
 
   constructor(
-    public readonly Model: ModelClass<M>
+    public readonly Model: ModelClass<M>,
   ) {}
 
   // #region Properties
 
   public copy(): Query<M> {
-    const copy        = new Query<M>(this.Model)
-    copy._filters     = cloneDeep(this._filters)
-    copy._sorts       = cloneDeep(this._sorts)
+    const copy = new Query<M>(this.Model)
+    copy._filters = cloneDeep(this._filters)
+    copy._sorts = cloneDeep(this._sorts)
     copy._projections = {...this._projections}
-    copy._skipCount   = this._skipCount
-    copy._limitCount  = this._limitCount
-    copy._collation   = this._collation
+    copy._skipCount = this._skipCount
+    copy._limitCount = this._limitCount
+    copy._collation = this._collation
     return copy
   }
 
-  private _filters:     Filter[] = []
+  private _filters: Filter[] = []
 
   /**
    * The filters as an array.
@@ -50,7 +50,7 @@ export default class Query<M extends Model> {
 
   private _skipCount:  number | null = null
   private _limitCount: number | null = null
-  public get skipCount()  { return this._skipCount }
+  public get skipCount() { return this._skipCount }
   public get limitCount() { return this._limitCount }
 
   private _collation: CollationOptions | null = null
@@ -132,10 +132,13 @@ export default class Query<M extends Model> {
 
     merged._sorts = {...this._sorts, ...other._sorts}
     merged._projections =
-      this.projections == null && other.projections == null ? {} :
-      this.projections == null ? {...other.projections} :
-      other.projections == null ? {...this.projections} :
-      {...this.projections, ...other.projections}
+      this.projections == null && other.projections == null
+        ? {}
+        : this.projections == null
+          ? {...other.projections}
+          : other.projections == null
+            ? {...this.projections}
+            : {...this.projections, ...other.projections}
 
     const skipCounts = sparse([this.skipCount, other.skipCount])
     merged._skipCount = skipCounts.length > 0 ? Math.min(...skipCounts) : null
@@ -191,7 +194,7 @@ export default class Query<M extends Model> {
       projections: this._projections,
       skipCount:   this._skipCount,
       limitCount:  this._limitCount,
-      collation:   this._collation
+      collation:   this._collation,
     }
   }
 
@@ -202,7 +205,7 @@ export default class Query<M extends Model> {
       projections,
       skipCount,
       limitCount,
-      collation
+      collation,
     } = raw
 
     if (filters != null) {
@@ -247,11 +250,11 @@ function removeUndefineds(filters: Record<string, any>) {
 }
 
 export interface QueryRaw {
-  model:        string
-  filters:      Filter[]
-  sorts:        Sorts
-  projections:  Record<string, string | number> | null
-  limitCount:   number | null
-  skipCount:    number | null
-  collation:    CollationOptions | null
+  model:       string
+  filters:     Filter[]
+  sorts:       Sorts
+  projections: Record<string, string | number> | null
+  limitCount:  number | null
+  skipCount:   number | null
+  collation:   CollationOptions | null
 }

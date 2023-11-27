@@ -9,7 +9,7 @@ export default class InconsistencyError<M extends Model> extends Error {
     this.Model = Model
   }
 
-  public readonly Model:  ModelClass<M>
+  public readonly Model: ModelClass<M>
 
   public toJSON() {
     return {

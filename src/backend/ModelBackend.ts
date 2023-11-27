@@ -93,7 +93,7 @@ export default class ModelBackend<M extends Model> {
     }
 
     const backend = this.cloneFor(ref.Model)
-    const model   = await backend.query().get(ref.id)
+    const model = await backend.query().get(ref.id)
     this.refCache.set(ref, model)
     return model
   }
@@ -130,7 +130,7 @@ export default class ModelBackend<M extends Model> {
    * Finds or creates a model.
    *
    * @param required
-   * 	 The attributes to filter by and the use when creating.
+   *   The attributes to filter by and the use when creating.
    * @param defaults
    *   Defaults to apply if the model needed to be created. Provide an object of attributes or a function to modify
    *   the model. Note that the attributes or function is only applied if the model did not yet exist.
@@ -142,7 +142,7 @@ export default class ModelBackend<M extends Model> {
     required: Record<string, any>,
     defaults: Record<string, any> | ((model: M) => any) = {},
     updates:  Record<string, any> | ((model: M) => any) = {},
-    options:  SaveOptions = {}
+    options:  SaveOptions = {},
   ): Promise<M> {
     const query = this.Model.filter(required)
 
@@ -347,7 +347,7 @@ export default class ModelBackend<M extends Model> {
         attribute as keyof M,
         value,
         isPlainObject(type.options.unique) ? type.options.unique : {},
-        result
+        result,
       )
     }
   }
@@ -418,7 +418,6 @@ export default class ModelBackend<M extends Model> {
         .replace(/\\\\/g, '\\')
     })
   }
-
 
   // #endregion
 
