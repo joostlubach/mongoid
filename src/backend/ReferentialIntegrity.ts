@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import { isArray, some, uniq } from 'lodash'
-import { flatMap, MapBuilder, modifyInObject, splitArray, isPlainObject } from 'ytil'
+import { flatMap, isPlainObject, MapBuilder, modifyInObject, splitArray } from 'ytil'
+
 import config from '../config'
 import Model from '../Model'
 import { getAllModelClasses, getModelClass } from '../registry'

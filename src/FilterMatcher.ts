@@ -1,5 +1,13 @@
 import { every, isArray, isEqual, size, some } from 'lodash'
-import { arrayEquals, isPlainObject, objectEntries, objectEquals, objectKeys, isObject, UnknownObject } from 'ytil'
+import {
+  arrayEquals,
+  isObject,
+  isPlainObject,
+  objectEntries,
+  objectEquals,
+  objectKeys,
+  UnknownObject,
+} from 'ytil'
 
 export default class FilterMatcher {
 

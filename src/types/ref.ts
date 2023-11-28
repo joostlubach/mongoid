@@ -1,6 +1,7 @@
 import { isFunction, omit } from 'lodash'
 import { INVALID, OptionalType, RequiredType, Type, TypeOptions, ValidatorResult } from 'validator'
 import { isPlainObject } from 'ytil'
+
 import { Reference } from '../backend/ReferentialIntegrity'
 import Model from '../Model'
 import { getModelClass } from '../registry'

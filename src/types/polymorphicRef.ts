@@ -1,4 +1,5 @@
 import { INVALID, Type, TypeOptions, ValidatorResult } from 'validator'
+
 import Model from '../Model'
 import { getModelClass } from '../registry'
 import { Ref, RefDeleteStrategy } from '../types/ref'

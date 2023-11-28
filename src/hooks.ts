@@ -1,6 +1,7 @@
 import { isFunction } from 'lodash'
 import { ValidatorResult } from 'validator'
 import { NestedWeakMap, TypedMethodDecorator } from 'ytil'
+
 import ModelBackend from './backend/ModelBackend'
 import Model from './Model'
 import { ModelClass } from './typings'

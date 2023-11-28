@@ -1,4 +1,5 @@
 import { AggregationCursor, FindCursor as mongo_Cursor } from 'mongodb'
+
 import Model from '../Model'
 import ModelBackend from './ModelBackend'
 

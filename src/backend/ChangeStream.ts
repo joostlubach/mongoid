@@ -7,6 +7,7 @@ import {
   ChangeStreamUpdateDocument,
   Db,
 } from 'mongodb'
+
 import { AggregationPipeline } from '../aggregation'
 import Model from '../Model'
 import ModelChange from '../ModelChange'

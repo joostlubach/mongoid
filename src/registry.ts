@@ -1,4 +1,5 @@
 import { ObjectSchema, ObjectSchemaMap } from 'validator'
+
 import Meta from './Meta'
 import mongoid_Model from './Model'
 import { ConfigCommon, ModelClass, ModelConfig } from './typings'

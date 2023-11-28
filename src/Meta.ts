@@ -2,6 +2,7 @@ import { pluralize } from 'inflected'
 import { snakeCase } from 'lodash'
 import { ObjectSchema, Type } from 'validator'
 import { object } from 'validator/types'
+
 import config from './config'
 import Model from './Model'
 import { isVirtual } from './types/virtual'

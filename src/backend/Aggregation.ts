@@ -6,6 +6,7 @@ import {
   Collection,
   MongoClient,
 } from 'mongodb'
+
 import { AggregationPipelineRaw } from '../aggregation'
 import config from '../config'
 import Model from '../Model'

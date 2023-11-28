@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import stripAnsi from 'strip-ansi'
 import { ValidationError, ValidatorResultSerialized } from 'validator'
 import { sparse } from 'ytil'
+
 import Model from './Model'
 import { ModelClass } from './typings'
 

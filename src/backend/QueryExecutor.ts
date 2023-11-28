@@ -9,6 +9,7 @@ import {
   UpdateResult,
 } from 'mongodb'
 import { sparse } from 'ytil'
+
 import config from '../config'
 import Model from '../Model'
 import Query from '../Query'

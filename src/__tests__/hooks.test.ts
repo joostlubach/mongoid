@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb'
 import { ValidatorResult } from 'validator'
+
 import { ModelBackend } from '../backend'
 import { hook } from '../hooks'
 import Model from '../Model'

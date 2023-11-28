@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import { Collection, CreateIndexesOptions } from 'mongodb'
+
 import config from '../config'
 import { indexName, withClientStackTrace } from '../util'
 
