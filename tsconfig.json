@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ESNext",
+    "outDir": "dist",
     "declaration": true,
     "sourceMap": true,
     "declarationMap": true,
