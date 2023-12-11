@@ -5,15 +5,18 @@
   "author": "Joost Lubach",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm build:tsc && pnpm build:copy",
-    "build:tsc": "tsc -p tsconfig.prod.json",
-    "build:copy": "copyfiles -u 1 src/**/*.yml src/**/*.css dist",
+    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
+    "build:esm": "pnpm build:tsc:esm && pnpm build:copy:esm",
+    "build:tsc:esm": "tsc -p tsconfig.prod.json --module ESNext --outDir dist/esm",
+    "build:copy:esm": "copyfiles -u 1 src/**/*.yml src/**/*.css dist/esm",
+    "build:cjs": "pnpm build:tsc:cjs && pnpm build:copy:cjs",
+    "build:tsc:cjs": "tsc -p tsconfig.prod.json --module CommonJS --outDir dist/cjs",
+    "build:copy:cjs": "copyfiles -u 1 src/**/*.yml src/**/*.css dist/cjs",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "check": "tsc -p . --noEmit",
     "test": "NODE_ENV=test jest"
   },
-
   "exports": {
     ".": {
       "require": {
