@@ -4,7 +4,7 @@ import Validator, { INVALID } from 'validator'
 import { emptyObject, objectEntries, objectKeys } from 'ytil'
 
 import Meta from './Meta'
-import Query from './Query'
+import Query, { Scope } from './Query'
 import { getModelMeta } from './registry'
 import { isVirtual } from './types/virtual'
 import { ID, ModelClass, ModelRaw } from './typings'
@@ -266,8 +266,7 @@ export default class Model {
 
   // #endregion
 
-  // ------
-  // Querying & loading
+  // #region Querying & loading
 
   /**
    * Builds a query for this model.
@@ -276,11 +275,17 @@ export default class Model {
     return new Query(this)
   }
 
+  public static scope<M extends Model>(this: ModelClass<M>, modifier: (query: Query<M>) => Query<M>) {
+    return new Scope(this, modifier)
+  }
+
   /**
    * Shortcut for `Model.query().filter({...})`.
    */
   public static filter<M extends Model>(this: ModelClass<M>, filters: Record<string, any>): Query<M> {
     return this.query().filter(filters)
   }
+
+  // #endregion
 
 }

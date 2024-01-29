@@ -1,20 +1,25 @@
-import { cloneDeep, omit } from 'lodash'
+import { cloneDeep, mapValues, omit } from 'lodash'
 import { CollationOptions } from 'mongodb'
 import { sparse } from 'ytil'
 
-import AggregationPipeline from './aggregation/AggregationPipeline'
 import FilterMatcher from './FilterMatcher'
 import Model from './Model'
-import { getModelClass } from './registry'
+import AggregationPipeline from './aggregation/AggregationPipeline'
+import { getModelClass, getModelMeta } from './registry'
+import { PolymorphicRef, Ref } from './types'
 import { Filter, ModelClass, Sorts } from './typings'
 
-export default class Query<M extends Model> {
+export default class Query<M extends Model> implements AsQuery<M> {
 
   constructor(
     public readonly Model: ModelClass<M>,
   ) {}
 
   // #region Properties
+
+  public asQuery(): Query<M> {
+    return this
+  }
 
   public copy(): Query<M> {
     const copy = new Query<M>(this.Model)
@@ -190,13 +195,41 @@ export default class Query<M extends Model> {
   public serialize(): QueryRaw {
     return {
       model:       this.Model.name,
-      filters:     this._filters,
+      filters:     this._filters.map(it => this.serializeFilter(it)),
       sorts:       this._sorts,
       projections: this._projections,
       skipCount:   this._skipCount,
       limitCount:  this._limitCount,
       collation:   this._collation,
     }
+  }
+
+  private serializeFilter(filter: Record<string, any>) {
+    const meta = getModelMeta(this.Model)
+
+    const isPolymorphicRefField = (name: string) => {
+      const field = meta.getSchemas()[0][name]
+      return field?.options.type === 'polymorphicRef'
+    }
+
+    return mapValues(filter, (val, name) => {
+      // Typically, model instances or Ref instances may be used to filter refs.
+      if (val instanceof Ref || val instanceof PolymorphicRef) {
+        return val.serialize()
+      } else if (val instanceof Model) {
+        if (isPolymorphicRefField(name)) {
+          return {
+            model: val.ModelClass.name,
+            id:    val.id,
+          }
+        } else {
+          return val.id
+        }
+      } else {
+        return val
+      }
+
+    })
   }
 
   public deserialize(raw: Partial<QueryRaw>) {
@@ -238,6 +271,27 @@ export default class Query<M extends Model> {
 
   // #endregion
 
+}
+
+export class Scope<M extends Model> implements AsQuery<M> {
+
+  constructor(
+    public readonly Model: ModelClass<M>,
+    private readonly modifier: (query: Query<M>) => Query<M>,
+  ) {}
+
+  public asQuery() {
+    return this.apply(this.Model.query())
+  }
+
+  public apply(query: Query<M>): Query<M> {
+    return this.modifier(query)
+  }
+
+}
+
+export interface AsQuery<M extends Model> {
+  asQuery(): Query<M>
 }
 
 function removeUndefineds(filters: Record<string, any>) {

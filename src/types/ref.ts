@@ -2,8 +2,8 @@ import { isFunction, omit } from 'lodash'
 import { INVALID, OptionalType, RequiredType, Type, TypeOptions, ValidatorResult } from 'validator'
 import { isPlainObject } from 'ytil'
 
-import { Reference } from '../backend/ReferentialIntegrity'
 import Model from '../Model'
+import { Reference } from '../backend/ReferentialIntegrity'
 import { getModelClass } from '../registry'
 import { ID, IDOf, ModelClass } from '../typings'
 
@@ -84,7 +84,7 @@ export function ref(options: RefOptions<any, any>): Type<any, any> {
     },
 
     serialize(ref: any): any {
-      return ref instanceof Ref ? ref.id : ref
+      return ref instanceof Ref ? ref.serialize() : ref
     },
 
     validate(value: any, result: ValidatorResult<any>) {
@@ -117,6 +117,10 @@ export class Ref<TRef extends Model, TParent extends Model = Model> {
 
   public static isRef<TRef extends Model, TParent extends Model>(arg: any): arg is Ref<TRef, TParent> {
     return arg instanceof Ref
+  }
+
+  public serialize() {
+    return this.id
   }
 
   public equals(other: Ref<TRef, TParent>) {

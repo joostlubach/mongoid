@@ -47,7 +47,7 @@ export function polymorphicRef<PM extends Model = any>(options: TypeOptions<Poly
 
     serialize(ref: any): any {
       return ref instanceof PolymorphicRef
-        ? {model: ref.Model.modelName, id: ref.id}
+        ? ref.serialize()
         : ref
     },
 
@@ -63,6 +63,13 @@ export class PolymorphicRef<M extends Model = any> extends Ref<M> {
 
   public static isPolymorphicRef<M extends Model = any>(value: any): value is PolymorphicRef<M> {
     return value instanceof PolymorphicRef
+  }
+
+  public serialize(): any {
+    return {
+      model: this.Model.name,
+      id:    this.id,
+    }
   }
 
 }

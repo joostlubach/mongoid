@@ -1,7 +1,7 @@
 export { default as Model } from './Model'
 export { default as InvalidModelError } from './InvalidModelError'
 export { default as InconsistencyError } from './InconsistencyError'
-export { default as Query, type QueryRaw } from './Query'
+export { default as Query, Scope, type AsQuery, type QueryRaw } from './Query'
 export { default as FilterMatcher } from './FilterMatcher'
 export { Ref } from './types/ref'
 export { PolymorphicRef } from './types/polymorphicRef'

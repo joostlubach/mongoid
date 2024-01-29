@@ -2,9 +2,9 @@ import { DateTime } from 'luxon'
 import { CreateIndexesOptions, Long, ObjectId } from 'mongodb'
 import { MergedPolySchemaInstance, ObjectSchema, ObjectSchemaMap, SchemaInstance } from 'validator'
 
-import AggregationPipeline from './aggregation/AggregationPipeline'
 import Model from './Model'
 import Query from './Query'
+import AggregationPipeline from './aggregation/AggregationPipeline'
 
 export type ModelConfig = MonoModelConfig<any> | PolyModelConfig<any>
 
