@@ -5,18 +5,18 @@ import { Collection, DeleteResult, Document, Filter, MongoClient, UpdateFilter }
 import Validator, { ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, objectEntries, sparse } from 'ytil'
 
-import config from '../config'
-import { callInstanceHook, callStaticHook } from '../hooks'
 import InvalidModelError from '../InvalidModelError'
 import Model from '../Model'
 import Query from '../Query'
+import config from '../config'
+import { callInstanceHook, callStaticHook } from '../hooks'
 import { getModelMeta } from '../registry'
 import { Ref } from '../types/ref'
 import { IDOf, Index, ModelClass, SaveOptions, UniqueSpec } from '../typings'
 import { deepMapKeys, withClientStackTrace } from '../util'
-import { createIndex } from './admin'
 import QueryExecutor, { QueryExecutorOptions } from './QueryExecutor'
 import ReferentialIntegrity from './ReferentialIntegrity'
+import { createIndex } from './admin'
 
 export default class ModelBackend<M extends Model> {
 
@@ -235,11 +235,11 @@ export default class ModelBackend<M extends Model> {
       delete data[name]
     }
 
-    const referentialIntegrity = new ReferentialIntegrity(this, model)
+    const referentialIntegrity = new ReferentialIntegrity(this)
     const document: Record<string, any> = {
       ...data,
       _id:         model.mongoID,
-      _references: referentialIntegrity.collectReferences(),
+      _references: referentialIntegrity.collectReferences(model),
       updatedAt:   now.toJSDate(),
       createdAt:   now.toJSDate(),
     }
@@ -261,11 +261,11 @@ export default class ModelBackend<M extends Model> {
       return null
     }
 
-    const referentialIntegrity = new ReferentialIntegrity(this, model)
+    const referentialIntegrity = new ReferentialIntegrity(this)
     return {
       $set: {
         ...$set,
-        _references: referentialIntegrity.collectReferences(),
+        _references: referentialIntegrity.collectReferences(model),
       },
     }
   }
@@ -288,10 +288,8 @@ export default class ModelBackend<M extends Model> {
     const models = await this.query(query).find()
 
     await Promise.all(models.map(it => callInstanceHook(it, 'beforeDelete', this)))
-    await Promise.all(models.map(async model => {
-      const integrity = new ReferentialIntegrity(this, model)
-      await integrity.processDeletion()
-    }))
+    const integrity = new ReferentialIntegrity(this)
+    await integrity.processDeletion(models.map(it => it.id))
 
     const result = query.limitCount === 1
       ? await this.query(query).deleteOne()

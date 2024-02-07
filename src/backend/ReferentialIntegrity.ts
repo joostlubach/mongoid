@@ -1,9 +1,9 @@
 import chalk from 'chalk'
-import { isArray, some, uniq } from 'lodash'
+import { isArray, some } from 'lodash'
 import { flatMap, isPlainObject, MapBuilder, modifyInObject, splitArray } from 'ytil'
 
-import config from '../config'
 import Model from '../Model'
+import config from '../config'
 import { getAllModelClasses, getModelClass } from '../registry'
 import { Ref, RefDeleteStrategy, RefOptions } from '../types/ref'
 import { ID, ModelClass } from '../typings'
@@ -13,21 +13,22 @@ export default class ReferentialIntegrity<M extends Model> {
 
   constructor(
     private readonly backend: ModelBackend<M>,
-    private readonly model: M,
   ) {}
 
   private get Model() {
-    return this.model.constructor as ModelClass<M>
+    return this.backend.Model
   }
 
+  // #region Checks
+
   /**
-   * Checks all referential integrity rules for this module.
+   * Checks all referential integrity rules for this model.
    */
-  public async check(options: CheckOptions = {}): Promise<CheckResult> {
+  public async check(model: M, options: CheckOptions = {}): Promise<CheckResult> {
     const invalid: Array<[Reference, RefDeleteStrategy<any>]> = []
 
-    for (const reference of this.collectReferences()) {
-      const retval = await this.checkReference(reference)
+    for (const reference of this.collectReferences(model)) {
+      const retval = await this.checkReference(model, reference)
       if (retval !== true) {
         invalid.push([reference, retval])
       }
@@ -35,12 +36,12 @@ export default class ReferentialIntegrity<M extends Model> {
 
     if (options.fix) {
       if (some(invalid, ([, strategy]) => strategy === 'cascade')) {
-        await this.backend.delete(this.model)
+        await this.backend.delete(model)
         return {status: 'deleted'}
       }
 
       if (some(invalid, ([, strategy]) => strategy === 'delete')) {
-        await this.backend.query(this.Model.filter({id: this.model.id})).deleteAll()
+        await this.backend.query(this.Model.filter({id: model.id})).deleteAll()
         return {status: 'deleted'}
       }
 
@@ -48,7 +49,7 @@ export default class ReferentialIntegrity<M extends Model> {
       const failedReferences: Reference[] = []
 
       for (const [reference, strategy] of invalid) {
-        const fixed = await this.fixReference(this.model, reference, strategy)
+        const fixed = await this.fixReference(model, reference, strategy)
         if (fixed) {
           fixedReferences.push(reference)
         } else {
@@ -57,7 +58,7 @@ export default class ReferentialIntegrity<M extends Model> {
       }
 
       if (fixedReferences.length > 0) {
-        await this.backend.save(this.model)
+        await this.backend.save(model)
       }
 
       return {
@@ -76,7 +77,7 @@ export default class ReferentialIntegrity<M extends Model> {
     }
   }
 
-  private async checkReference(reference: Reference): Promise<true | RefDeleteStrategy<any>> {
+  private async checkReference(model: M, reference: Reference): Promise<true | RefDeleteStrategy<any>> {
     const Model = getModelClass(reference.model)
     if (Model == null) {
       throw new Error(`Invalid reference: model \`${reference.model}\` does not exist`)
@@ -85,7 +86,7 @@ export default class ReferentialIntegrity<M extends Model> {
     const count = await this.backend.query(this.Model.filter({id: reference.id})).count()
     if (count > 0) { return true }
 
-    const strategy = findRefStrategy(this.model, reference.path)
+    const strategy = findRefStrategy(model, reference.path)
     if (strategy == null) {
       throw new Error(`Cannot fix reference ${reference.path}: no strategy found`)
     }
@@ -93,14 +94,18 @@ export default class ReferentialIntegrity<M extends Model> {
     return strategy
   }
 
+  // #endregion
+
+  // #region Reference collection
+
   /**
    * Derives a flat list of references from the model from its `ref`-type declarations. This list is indexed by MongoDB,
    * and is used to look up all models affected by a deletion.
    */
-  public collectReferences() {
+  public collectReferences(model: M) {
     const references: Reference[] = []
 
-    this.model.meta.modelType.traverse?.(this.model, [], (value, path, type) => {
+    model.meta.modelType.traverse?.(model, [], (value, path, type) => {
       if (type.name !== 'ref') { return }
       if (!(value instanceof Ref)) { return }
 
@@ -127,47 +132,17 @@ export default class ReferentialIntegrity<M extends Model> {
     return references
   }
 
-  /**
-   * Retrieves a list of all models affected by a deletion of the model, and all affected references by model.
-   */
-  public async findAffectedModels(): Promise<AffectedModel[]> {
-    const affectedModels: AffectedModel[] = []
+  // #endregion
 
-    const promises = getAllModelClasses().map(async Model => {
-      const items = await this.backend.query(Model.filter({
-        _references: {
-          $elemMatch: {
-            model: this.Model.name,
-            id:    this.model.id,
-          },
-        },
-      }).project({
-        id:          1,
-        _references: 1,
-      })).rawArray()
-
-      for (const item of items) {
-        affectedModels.push({
-          Model,
-          id:         item._id,
-          references: item._references.filter((ref: Reference) => (
-            ref.model === Model.modelName && ref.id === this.model.id
-          )),
-        })
-      }
-    })
-    await Promise.all(promises)
-
-    return affectedModels
-  }
+  // #region Deletion
 
   /**
-   * Processes deletion of the model.
+   * Processes deletion of model instances.
    */
-  public async processDeletion() {
+  public async processDeletion(ids: ID[]) {
     // Find all effected models by this deletion.
-    const affectedModels = await this.findAffectedModels()
-    this.logDeletion(affectedModels)
+    const affectedModels = await this.findAffectedModels(ids)
+    this.logDeletion(ids, affectedModels)
 
     // Find all models that have a 'cascade' or 'delete' reference. They will be deleted.
     const [deletedModels, rest] = splitArray(affectedModels, it => some(it.references, it => it.strategy === 'cascade' || it.strategy === 'delete'))
@@ -181,22 +156,52 @@ export default class ReferentialIntegrity<M extends Model> {
 
     // Delete all the models to delete. Use a fast method for delete models, and a slow method (one by one) for the cascade models.
     const [cascadeModels, deleteModels] = splitArray(deletedModels, it => some(it.references, it => it.strategy === 'cascade'))
-    await this.fastDeleteModels(deleteModels)
+    await this.fastDeleteModels(deleteModels, ids)
     await Promise.all(cascadeModels.map(model => this.cascadeDelete(model)))
 
     // Finally, process the rest.
     await Promise.all(rest.map(model => this.processReferences(model)))
   }
 
-  private async fastDeleteModels(affectedModels: AffectedModel[]) {
+  /**
+   * Retrieves a list of all models affected by a deletion of the model, and all affected references by model.
+   */
+  public async findAffectedModels(ids: ID[]): Promise<AffectedModel[]> {
+    const affectedModels: AffectedModel[] = []
+
+    const promises = getAllModelClasses().map(async Model => {
+      const items = await this.backend.query(Model.filter({
+        _references: {
+          $elemMatch: {
+            model: this.Model.name,
+            id:    {$in: ids},
+          },
+        },
+      }).project({
+        id:          1,
+        _references: 1,
+      })).rawArray()
+
+      for (const item of items) {
+        affectedModels.push({
+          Model,
+          id:         item._id,
+          references: item._references.filter((ref: Reference) => (
+            ref.model === Model.modelName && ids.includes(ref.id)
+          )),
+        })
+      }
+    })
+    await Promise.all(promises)
+
+    return affectedModels
+  }
+
+  private async fastDeleteModels(affectedModels: AffectedModel[], deletedIDs: ID[]) {
     const byModelClass = MapBuilder.groupBy(affectedModels, model => model.Model)
     for (const [Model, models] of byModelClass) {
-      const paths = uniq(flatMap(models, model => model.references).map(ref => ref.path))
-      await this.backend.query(Model.filter({
-        $or: paths.map(path => ({
-          [path]: this.model.id,
-        })),
-      })).deleteAll()
+      const ids = models.map(it => it.id)
+      await this.backend.query(Model.filter({id: {$in: ids}})).deleteAll()
     }
   }
 
@@ -244,8 +249,10 @@ export default class ReferentialIntegrity<M extends Model> {
     })
   }
 
-  private logDeletion(affected: AffectedModel[]) {
-    const modelDesc = `${this.Model.name} ${this.model.id}`
+  private logDeletion(deletedIDs: ID[], affected: AffectedModel[]) {
+    if (!process.env.DEBUG) { return }
+
+    const modelDesc = `${this.Model.name} ${deletedIDs.join(', ')}`
     const affectedModelDesc = (model: AffectedModel) => `${model.Model.name} ${model.id}`
 
     if (affected.length === 0) {
@@ -254,6 +261,8 @@ export default class ReferentialIntegrity<M extends Model> {
       config.logger.debug(chalk`RefInt - Deleting {red ${modelDesc}} {dim (${affected.map(affectedModelDesc).join(', ')})}`)
     }
   }
+
+  // #endregion
 
 }
 
