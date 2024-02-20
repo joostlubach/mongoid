@@ -1,7 +1,8 @@
-import { Type, TypeOptions } from 'validator'
+import { OpenAPISchemaObject, Type, TypeOptions } from 'validator'
 
 export interface VirtualOptions {
-  get?: (item: any) => any
+  get?:     (item: any) => any
+  openAPI?: OpenAPISchemaObject
 }
 
 export function virtual(options: TypeOptions<any> & VirtualOptions = {}): Type<any, any> {
@@ -24,6 +25,8 @@ export function virtual(options: TypeOptions<any> & VirtualOptions = {}): Type<a
     validate() {
       // No-op
     },
+
+    openAPI: options.openAPI,
   }
 }
 

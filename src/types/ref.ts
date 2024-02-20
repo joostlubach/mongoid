@@ -98,6 +98,14 @@ export function ref(options: RefOptions<any, any>): Type<any, any> {
 
       result.addError('invalid_type', 'Expected an ID')
     },
+
+    openAPI: {
+      type:          'string',
+      'x-ref':       'monomorphic',
+      'x-ref-model': options.model,
+    },
+
+    openAPISchemaName: `Ref<${options.model}>`,
   }
 }
 

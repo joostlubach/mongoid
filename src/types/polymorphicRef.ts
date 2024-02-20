@@ -56,6 +56,18 @@ export function polymorphicRef<PM extends Model = any>(options: TypeOptions<Poly
         result.addError('invalid_type', 'Expected a polymorphic reference')
       }
     },
+
+    openAPI: {
+      type:       'object',
+      properties: {
+        model: {type: 'string'},
+        id:    {type: 'string'},
+      },
+      required:       ['model', 'id'],
+      'x-ref':        'polymorphic',
+      'x-ref-models': options.models?.join(','),
+    },
+    openAPISchemaName: 'PolymorphicRef',
   }
 }
 
