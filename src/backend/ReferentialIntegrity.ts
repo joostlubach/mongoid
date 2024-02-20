@@ -267,7 +267,7 @@ export default class ReferentialIntegrity<M extends Model> {
 }
 
 function findRefStrategy(model: Model, path: string): RefDeleteStrategy<any> | null {
-  const type = model.meta.findSchemaType(model, path)
+  const type = model.meta.findAttribute(model, path)
   if (type?.name !== 'ref') { return null }
 
   return type.options.onDelete ?? 'unset'

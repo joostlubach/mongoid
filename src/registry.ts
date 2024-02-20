@@ -1,3 +1,4 @@
+import { isObject } from 'lodash'
 import { ObjectSchema, ObjectSchemaMap } from 'validator'
 
 import Meta from './Meta'
@@ -53,10 +54,10 @@ export function getModelMeta(nameOrModelClass: string | ModelClass<any>, throwIf
   })?.[1]
 
   if (meta == null && throwIfNotFound) {
-    if (typeof nameOrModelClass === 'string') {
-      throw new Error(`Model \`${nameOrModelClass}\` is not registered as a model class`)
-    } else {
+    if (isObject(nameOrModelClass) && 'name' in nameOrModelClass) {
       throw new Error(`Model class \`${nameOrModelClass.name}\` is not registered as a model class`)
+    } else {
+      throw new Error(`Model \`${nameOrModelClass}\` is not registered as a model class`)
     }
   }
 

@@ -60,7 +60,7 @@ export default class Model {
   }
 
   public get schema() {
-    return this.meta.getSchema(this)
+    return this.meta.schemaForModel(this)
   }
 
   // #endregion
@@ -87,7 +87,7 @@ export default class Model {
    * Gets all attributes that are defined in the schema.
    */
   public get attributes(): Record<string, any> {
-    return this.meta.getAttributes(this)
+    return this.meta.attributesForModel(this)
   }
 
   public get(attribute: string) {
@@ -109,7 +109,7 @@ export default class Model {
       Object.assign(this, {type: raw.type})
 
       // Also, the entire validation structure changes for this model, so we need to do a full recoerce.
-      raw = Object.assign({}, this.meta.getAttributes(this, false), raw)
+      raw = Object.assign({}, this.meta.attributesForModel(this, false), raw)
       partial = false
     }
 
@@ -123,7 +123,7 @@ export default class Model {
     if (coerced === INVALID) { return {} }
 
     // Delete virtual properties.
-    const schema = this.meta.getSchema(this)
+    const schema = this.meta.schemaForModel(this)
     for (const name of Object.keys(schema)) {
       if (isVirtual(schema[name])) {
         delete (coerced as any)[name]
@@ -137,7 +137,7 @@ export default class Model {
    * Casts the attributes in this model again. Happens automatically before saving.
    */
   public recoerce(): this {
-    const attributes = this.meta.getAttributes(this, false)
+    const attributes = this.meta.attributesForModel(this, false)
     Object.assign(this, this.coerce(attributes, false))
     return this
   }
@@ -166,7 +166,7 @@ export default class Model {
    * Serializes this model for sending over JSON.
    */
   public serialize(includeVirtual: boolean = true): ModelRaw {
-    const attributes = this.meta.getAttributes(this, includeVirtual)
+    const attributes = this.meta.attributesForModel(this, includeVirtual)
     const serialized = this.meta.modelType.serialize(attributes)
 
     if (includeVirtual) {

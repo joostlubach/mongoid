@@ -1,22 +1,21 @@
 import { pluralize } from 'inflected'
 import { snakeCase } from 'lodash'
 import { ObjectSchema, Type } from 'validator'
-import { object } from 'validator/types'
+import { object, string } from 'validator/types'
 
-import config from './config'
 import Model from './Model'
+import config from './config'
 import { isVirtual } from './types/virtual'
-import { ID, Index, ModelClass, ModelConfig } from './typings'
+import { ID, ModelClass, ModelConfig } from './typings'
 
 export default class Meta<M extends Model> {
-
-  // ------
-  // Construction
 
   constructor(
     public readonly Model:  ModelClass<M>,
     public readonly config: ModelConfig,
   ) {}
+
+  // #region Basic info
 
   public get modelName() {
     return this.config.name
@@ -29,6 +28,10 @@ export default class Meta<M extends Model> {
       return snakeCase(pluralize(this.modelName))
     }
   }
+
+  // #endregion
+
+  // #region IDs
 
   public idToMongo(id: ID): ID {
     if (this.config.idAdapter != null) {
@@ -50,16 +53,6 @@ export default class Meta<M extends Model> {
     }
   }
 
-  public get indexes(): Index[] {
-    return [
-      ...this.config.indexes ?? [],
-      {'_references.model': 1, '_references.id': 1},
-    ]
-  }
-
-  // ------
-  // Schema
-
   public async generateID(model: Model): Promise<ID> {
     if (this.config.idGenerator != null) {
       return await this.config.idGenerator(model)
@@ -68,7 +61,19 @@ export default class Meta<M extends Model> {
     }
   }
 
-  public getSchema(model: Model): ObjectSchema {
+  // #endregion
+
+  // #region Schemas
+
+  public schemas(): ObjectSchema[] {
+    if (this.config.polymorphic) {
+      return Object.values(this.config.schemas)
+    } else {
+      return [this.config.schema]
+    }
+  }
+
+  public schemaForModel(model: Model): ObjectSchema {
     if (this.config.polymorphic) {
       const type = (model as any).type
       if (type == null) { return {} }
@@ -79,15 +84,7 @@ export default class Meta<M extends Model> {
       }
       return schema
     } else {
-      return this.config.schema || {}
-    }
-  }
-
-  public getSchemas(): ObjectSchema[] {
-    if (this.config.polymorphic) {
-      return Object.values(this.config.schemas)
-    } else {
-      return [this.config.schema]
+      return this.config.schema ?? {}
     }
   }
 
@@ -106,7 +103,27 @@ export default class Meta<M extends Model> {
     }
   }
 
-  public findSchemaType(model: Model, path: string): Type<any, any> | null {
+  // #endregion
+
+  // #region Attributes
+
+  public mergedAttributes(): ObjectSchema {
+    const merged: ObjectSchema = {}
+
+    if (this.config.polymorphic) {
+      merged.type = string({
+        required: true,
+        enum:     Object.keys(this.config.schemas),
+      })
+    }
+
+    for (const schema of this.schemas()) {
+      Object.assign(merged, schema)
+    }
+    return merged
+  }
+
+  public findAttribute(model: Model, path: string): Type<any, any> | null {
     let found: Type<any, any> | null = null
     this.modelType.traverse?.(model, [], (_, p, type) => {
       if (p === path) {
@@ -118,9 +135,9 @@ export default class Meta<M extends Model> {
     return found
   }
 
-  public getAttributes<M extends Model>(model: M, includeVirtual = false): Partial<M> {
+  public attributesForModel<M extends Model>(model: M, includeVirtual = false): Partial<M> {
     const attributes: any = {}
-    const schema = this.getSchema(model)
+    const schema = this.schemaForModel(model)
 
     // Add the polymorphic type key
     if (this.config.polymorphic) {
@@ -144,5 +161,7 @@ export default class Meta<M extends Model> {
 
     return attributes
   }
+
+  // #endregion
 
 }

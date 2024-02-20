@@ -208,7 +208,7 @@ export default class Query<M extends Model> implements AsQuery<M> {
     const meta = getModelMeta(this.Model)
 
     const isPolymorphicRefField = (name: string) => {
-      const field = meta.getSchemas()[0][name]
+      const field = meta.schemas()[0][name]
       return field?.options.type === 'polymorphicRef'
     }
 

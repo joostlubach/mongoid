@@ -8,8 +8,8 @@ import {
 import Validator, { ObjectSchema } from 'validator'
 import { objectEntries, objectKeys } from 'ytil'
 
-import { ModelBackend } from './backend'
 import Model from './Model'
+import { ModelBackend } from './backend'
 import { getModelMeta } from './registry'
 import { ID, ModelClass } from './typings'
 
@@ -29,7 +29,7 @@ export default class ModelChange<M extends Model> {
       type,
       model.ModelClass,
       model.id,
-      deriveModifications(model.originals as Partial<M>, model.meta.getAttributes(model, false)),
+      deriveModifications(model.originals as Partial<M>, model.meta.attributesForModel(model, false)),
     )
   }
 
@@ -56,7 +56,7 @@ export default class ModelChange<M extends Model> {
             ? ModelChangeType.Create
             : ModelChangeType.Update
 
-    const nextAttrs = model.meta.getAttributes(model, false)
+    const nextAttrs = model.meta.attributesForModel(model, false)
     const modifications = deriveModifications<M>(prevAttrs, nextAttrs)
     if (objectKeys(modifications).length > 0) {
       return new ModelChange(type, model.ModelClass, model.id, modifications)
