@@ -1,6 +1,6 @@
 import { pluralize } from 'inflected'
 import { snakeCase } from 'lodash'
-import { ObjectSchema, Type } from 'validator'
+import { mergeSchema, ObjectSchema, Type } from 'validator'
 import { object, string } from 'validator/types'
 
 import Model from './Model'
@@ -107,7 +107,7 @@ export default class Meta<M extends Model> {
 
   // #region Attributes
 
-  public mergedAttributes(): ObjectSchema {
+  public get mergedSchema(): ObjectSchema {
     const merged: ObjectSchema = {}
 
     if (this.config.polymorphic) {
@@ -118,7 +118,7 @@ export default class Meta<M extends Model> {
     }
 
     for (const schema of this.schemas) {
-      Object.assign(merged, schema)
+      mergeSchema(merged, schema)
     }
     return merged
   }
