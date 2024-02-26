@@ -65,7 +65,7 @@ export default class Meta<M extends Model> {
 
   // #region Schemas
 
-  public schemas(): ObjectSchema[] {
+  public get schemas(): ObjectSchema[] {
     if (this.config.polymorphic) {
       return Object.values(this.config.schemas)
     } else {
@@ -117,7 +117,7 @@ export default class Meta<M extends Model> {
       })
     }
 
-    for (const schema of this.schemas()) {
+    for (const schema of this.schemas) {
       Object.assign(merged, schema)
     }
     return merged
