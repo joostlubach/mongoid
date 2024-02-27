@@ -1,6 +1,6 @@
 import { pluralize } from 'inflected'
 import { snakeCase } from 'lodash'
-import { mergeSchema, ObjectSchema, Type } from 'validator'
+import { mergeSchema, ObjectSchema, schemaKeys, Type } from 'validator'
 import { object, string } from 'validator/types'
 
 import Model from './Model'
@@ -151,7 +151,7 @@ export default class Meta<M extends Model> {
     }
 
     // Add all other attributes.
-    for (const name of Object.keys(schema)) {
+    for (const name of schemaKeys(schema)) {
       if (!includeVirtual && isVirtual(schema[name])) {
         continue
       }

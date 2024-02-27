@@ -1,6 +1,6 @@
 import { cloneDeep, isEqual, some } from 'lodash'
 import { DateTime } from 'luxon'
-import Validator, { INVALID } from 'validator'
+import Validator, { INVALID, schemaKeys } from 'validator'
 import { emptyObject, objectEntries, objectKeys } from 'ytil'
 
 import Meta from './Meta'
@@ -124,7 +124,7 @@ export default class Model {
 
     // Delete virtual properties.
     const schema = this.meta.schemaForModel(this)
-    for (const name of Object.keys(schema)) {
+    for (const name of schemaKeys(schema)) {
       if (isVirtual(schema[name])) {
         delete (coerced as any)[name]
       }
