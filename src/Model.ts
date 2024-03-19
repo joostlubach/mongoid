@@ -96,7 +96,7 @@ export default class Model {
 
   /**
    * Casts given attributes to the types specified in this model's schema. This is done automatically
-   * in the {@link #assign} function.
+   * in the {@linkcode assign} function.
    */
   public coerce(raw: Record<string, any>, partial: boolean): Record<string, any> {
     const validator = new Validator()
@@ -188,7 +188,7 @@ export default class Model {
   }
 
   /**
-   * Deserializes this model from JSON. Similar to {@link #assign}, but also sets the ID and timestamps,
+   * Deserializes this model from JSON. Similar to {@linkcode assign}, but also sets the ID and timestamps,
    * and marks the model as `clean` and `persisted`.
    *
    * @param attributes The attributes to hydrate with.
