@@ -1,5 +1,5 @@
-import Model from './Model'
-import { ModelClass } from './typings'
+import Model from './Model.js'
+import { ModelClass } from './typings.js'
 
 export default class InconsistencyError<M extends Model> extends Error {
 

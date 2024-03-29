@@ -1,11 +1,11 @@
 import { MongoClient } from 'mongodb'
 import { ValidatorResult } from 'validator'
 
-import { ModelBackend } from '../backend'
-import { hook } from '../hooks'
-import Model from '../Model'
-import { model } from '../registry'
-import { testClient } from './client'
+import Model from '../Model.js'
+import { ModelBackend } from '../backend/index.js'
+import { hook } from '../hooks.js'
+import { model } from '../registry.js'
+import { testClient } from './client.js'
 
 describe('hooks', () => {
   let client: MongoClient

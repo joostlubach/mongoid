@@ -10,14 +10,14 @@ import {
 } from 'mongodb'
 import { sparse } from 'ytil'
 
-import config from '../config'
-import Model from '../Model'
-import Query from '../Query'
-import { getModelMeta } from '../registry'
-import { ID } from '../typings'
-import { withClientStackTrace } from '../util'
-import Cursor from './Cursor'
-import ModelBackend from './ModelBackend'
+import Model from '../Model.js'
+import Query from '../Query.js'
+import config from '../config.js'
+import { getModelMeta } from '../registry.js'
+import { ID } from '../typings.js'
+import { withClientStackTrace } from '../util.js'
+import Cursor from './Cursor.js'
+import ModelBackend from './ModelBackend.js'
 
 export default class QueryExecutor<M extends Model> {
 

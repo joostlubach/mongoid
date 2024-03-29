@@ -5,13 +5,13 @@ import {
   ChangeStreamInsertDocument,
   ChangeStreamUpdateDocument,
 } from 'mongodb'
-import Validator, { ObjectSchema } from 'validator'
+import { ObjectSchema, Validator } from 'validator'
 import { objectEntries, objectKeys } from 'ytil'
 
-import Model from './Model'
-import { ModelBackend } from './backend'
-import { getModelMeta } from './registry'
-import { ID, ModelClass } from './typings'
+import Model from './Model.js'
+import { ModelBackend } from './backend/index.js'
+import { getModelMeta } from './registry.js'
+import { ID, ModelClass } from './typings.js'
 
 export default class ModelChange<M extends Model> {
 
@@ -53,8 +53,8 @@ export default class ModelChange<M extends Model> {
       !isPersisted
         ? ModelChangeType.Delete
         : !wasPersisted
-            ? ModelChangeType.Create
-            : ModelChangeType.Update
+          ? ModelChangeType.Create
+          : ModelChangeType.Update
 
     const nextAttrs = model.meta.attributesForModel(model, false)
     const modifications = deriveModifications<M>(prevAttrs, nextAttrs)
@@ -71,14 +71,14 @@ export default class ModelChange<M extends Model> {
 
   public static async fromMongoChangeStreamDocument<M extends Model>(backend: ModelBackend<M>, doc: ChangeStreamDocument) {
     switch (doc.operationType) {
-      case 'insert':
-        return await this.fromChangeStreamInsertDocument(backend, doc)
-      case 'update':
-        return await this.fromChangeStreamUpdateDocument(backend, doc)
-      case 'delete':
-        return await this.fromChangeStreamDeleteDocument(backend, doc)
-      default:
-        throw new Error(`Operation type \`${doc.operationType}\` cannot be used to create a \`ModelChange\` instance`)
+    case 'insert':
+      return await this.fromChangeStreamInsertDocument(backend, doc)
+    case 'update':
+      return await this.fromChangeStreamUpdateDocument(backend, doc)
+    case 'delete':
+      return await this.fromChangeStreamDeleteDocument(backend, doc)
+    default:
+      throw new Error(`Operation type \`${doc.operationType}\` cannot be used to create a \`ModelChange\` instance`)
     }
   }
 

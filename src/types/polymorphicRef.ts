@@ -1,9 +1,9 @@
 import { INVALID, Type, TypeOptions, ValidatorResult } from 'validator'
 
-import Model from '../Model'
-import { getModelClass } from '../registry'
-import { Ref, RefDeleteStrategy } from '../types/ref'
-import { ID } from '../typings'
+import Model from '../Model.js'
+import { getModelClass } from '../registry.js'
+import { ID } from '../typings.js'
+import { Ref, RefDeleteStrategy } from './ref.js'
 
 export interface Options<PM extends Model = any> {
   models?:   string[]

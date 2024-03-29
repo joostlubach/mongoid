@@ -3,10 +3,10 @@ import { snakeCase } from 'lodash'
 import { mergeSchema, ObjectSchema, schemaKeys, Type } from 'validator'
 import { object, string } from 'validator/types'
 
-import Model from './Model'
-import config from './config'
-import { isVirtual } from './types/virtual'
-import { ID, ModelClass, ModelConfig } from './typings'
+import Model from './Model.js'
+import config from './config.js'
+import { isVirtual } from './types/index.js'
+import { ID, ModelClass, ModelConfig } from './typings.js'
 
 export default class Meta<M extends Model> {
 

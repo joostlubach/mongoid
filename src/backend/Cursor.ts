@@ -1,7 +1,7 @@
 import { AggregationCursor, FindCursor as mongo_Cursor } from 'mongodb'
 
-import Model from '../Model'
-import ModelBackend from './ModelBackend'
+import Model from '../Model.js'
+import ModelBackend from './ModelBackend.js'
 
 export default class Cursor<M extends Model> {
 

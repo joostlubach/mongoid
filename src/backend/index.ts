@@ -1,15 +1,28 @@
-export { connect } from './client'
-export { default as config, type Config, configure } from '../config'
-export { hook } from '../hooks'
+export {
+  type ChangeStreamDeleteDocument,
+  type ChangeStreamDocument,
+  type ChangeStreamInsertDocument,
+  type ChangeStreamUpdateDocument,
+} from 'mongodb'
+export { MongoClient } from 'mongodb'
 
-export { default as ModelBackend } from './ModelBackend'
-export { default as Aggregation } from './Aggregation'
-export { default as QueryExecutor } from './QueryExecutor'
-export { default as ChangeStream, type ChangeStreamOptions, type ChangeListener, type RawChangeListener, type ChangeListenerOptions } from './ChangeStream'
-export { type ChangeStreamDocument, type ChangeStreamInsertDocument, type ChangeStreamUpdateDocument, type ChangeStreamDeleteDocument } from 'mongodb'
-export { default as Cursor } from './Cursor'
-export { default as Meta } from '../Meta'
-export { default as ReferentialIntegrity, ReferentialIntegrityError, type Reference } from './ReferentialIntegrity'
-
-export * from './admin'
-export { type MongoClient } from 'mongodb'
+export { default as Meta } from '../Meta.js'
+export { type Config, configure, default as config } from '../config.js'
+export { hook } from '../hooks.js'
+export { default as Aggregation } from './Aggregation.js'
+export {
+  type ChangeListener,
+  type ChangeListenerOptions,
+  type ChangeStreamOptions,
+  default as ChangeStream,
+  type RawChangeListener,
+} from './ChangeStream.js'
+export { default as Cursor } from './Cursor.js'
+export { default as ModelBackend } from './ModelBackend.js'
+export { default as QueryExecutor } from './QueryExecutor.js'
+export {
+  default as ReferentialIntegrity,
+  type Reference,
+  ReferentialIntegrityError,
+} from './ReferentialIntegrity.js'
+export { connect } from './client.js'

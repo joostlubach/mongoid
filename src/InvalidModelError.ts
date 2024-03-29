@@ -3,8 +3,8 @@ import stripAnsi from 'strip-ansi'
 import { ValidationError, ValidatorResultSerialized } from 'validator'
 import { sparse } from 'ytil'
 
-import Model from './Model'
-import { ModelClass } from './typings'
+import Model from './Model.js'
+import { ModelClass } from './typings.js'
 
 export default class InvalidModelError<M extends Model> extends Error {
 

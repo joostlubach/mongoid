@@ -1,6 +1,7 @@
-import { model } from '../registry'
-import { array, number, ref, string } from '../types'
-import { TypedModel } from '../typings'
+import { model } from '../registry.js'
+import { array, number, string } from '../types.js'
+import { ref } from '../types/ref.js'
+import { TypedModel } from '../typings.js'
 
 const parentSchema = {
   name:     string(),

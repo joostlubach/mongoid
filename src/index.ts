@@ -1,15 +1,16 @@
-export { default as Model } from './Model'
-export { default as InvalidModelError } from './InvalidModelError'
-export { default as InconsistencyError } from './InconsistencyError'
-export { default as Query, Scope, type AsQuery, type QueryRaw } from './Query'
-export { default as FilterMatcher } from './FilterMatcher'
-export { Ref } from './types/ref'
-export { PolymorphicRef } from './types/polymorphicRef'
-export { default as ModelChange, ModelChangeType, type Modifications, UNKNOWN } from './ModelChange'
-export * from './aggregation'
-export * from './registry'
-export * from './hooks'
-export * from './typings'
-export { configure, type Config } from './config'
+export { Collection, type CountOptions, Db, type Document, MongoClient, ObjectId } from 'mongodb'
 
-export { MongoClient, Db, Collection, type Document, ObjectId, type CountOptions } from 'mongodb'
+export { default as FilterMatcher } from './FilterMatcher.js'
+export { default as InconsistencyError } from './InconsistencyError.js'
+export { default as InvalidModelError } from './InvalidModelError.js'
+export { default as Model } from './Model.js'
+export {
+  default as ModelChange,
+  ModelChangeType,
+  type Modifications,
+  UNKNOWN,
+} from './ModelChange.js'
+export { type AsQuery, default as Query, type QueryRaw, Scope } from './Query.js'
+export { type Config, configure } from './config.js'
+export { PolymorphicRef } from './types/index.js'
+export { Ref } from './types/ref.js'

@@ -4,48 +4,19 @@
   "description": "Simple MongoDB ORM",
   "author": "Joost Lubach",
   "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./backend": "./dist/backend/index.js",
+    "./types": "./dist/types/index.js"
+  },
   "scripts": {
-    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
-    "build:esm": "pnpm build:tsc:esm",
-    "build:tsc:esm": "tsc -p tsconfig.prod.json --module ESNext --outDir dist/esm",
-    "build:cjs": "pnpm build:tsc:cjs",
-    "build:tsc:cjs": "tsc -p tsconfig.prod.json --module CommonJS --outDir dist/cjs",
+    "build": "pnpm clean && pnpm build:tsc",
+    "build:tsc": "tsc -p tsconfig.prod.json",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "check": "tsc -p . --noEmit",
     "test": "NODE_ENV=test jest"
-  },
-  "exports": {
-    ".": {
-      "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      },
-      "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
-      }
-    },
-    "./backend": {
-      "require": {
-        "types": "./dist/cjs/backend/index.d.ts",
-        "default": "./dist/cjs/backend/index.js"
-      },
-      "import": {
-        "types": "./dist/esm/backend/index.d.ts",
-        "default": "./dist/esm/backend/index.js"
-      }
-    },
-    "./types": {
-      "require": {
-        "types": "./dist/cjs/types/index.d.ts",
-        "default": "./dist/cjs/types/index.js"
-      },
-      "import": {
-        "types": "./dist/esm/types/index.d.ts",
-        "default": "./dist/esm/types/index.js"
-      }
-    }
   },
   "dependencies": {
     "chalk": "^4.1.2",
@@ -53,7 +24,7 @@
     "luxon": "^3.3.0",
     "mongodb": "^6.1.0",
     "query": "github:protobi/query",
-    "strip-ansi": "^5.2.0",
+    "strip-ansi": "^7.1.0",
     "validator": "workspace:^",
     "winston": "^3.10.0",
     "yest": "workspace:^",

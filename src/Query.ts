@@ -2,12 +2,13 @@ import { cloneDeep, mapValues, omit } from 'lodash'
 import { CollationOptions } from 'mongodb'
 import { sparse } from 'ytil'
 
-import FilterMatcher from './FilterMatcher'
-import Model from './Model'
-import AggregationPipeline from './aggregation/AggregationPipeline'
-import { getModelClass, getModelMeta } from './registry'
-import { PolymorphicRef, Ref } from './types'
-import { Filter, ModelClass, Sorts } from './typings'
+import FilterMatcher from './FilterMatcher.js'
+import Model from './Model.js'
+import AggregationPipeline from './aggregation/AggregationPipeline.js'
+import { getModelClass, getModelMeta } from './registry.js'
+import { PolymorphicRef } from './types/index.js'
+import { Ref } from './types/ref.js'
+import { Filter, ModelClass, Sorts } from './typings.js'
 
 export default class Query<M extends Model> implements AsQuery<M> {
 
