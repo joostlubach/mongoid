@@ -8,12 +8,12 @@ import {
   Db,
 } from 'mongodb'
 
-import Model from '../Model.js'
-import ModelChange from '../ModelChange.js'
-import { AggregationPipeline } from '../aggregation/index.js'
-import { getModelClassForCollection, getModelMeta } from '../registry.js'
-import { ModelClass } from '../typings.js'
-import ModelBackend from './ModelBackend.js'
+import Model from '../Model'
+import ModelChange from '../ModelChange'
+import { AggregationPipeline } from '../aggregation'
+import { getModelClassForCollection, getModelMeta } from '../registry'
+import { ModelClass } from '../typings'
+import ModelBackend from './ModelBackend'
 
 export {
   type ChangeStreamDeleteDocument,

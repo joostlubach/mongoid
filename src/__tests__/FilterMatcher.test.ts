@@ -1,4 +1,4 @@
-import FilterMatcher from '../FilterMatcher.js'
+import FilterMatcher from '../FilterMatcher'
 
 describe("FilterMatcher", () => {
   it("should match simple filters", () => {

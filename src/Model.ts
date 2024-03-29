@@ -3,11 +3,11 @@ import { DateTime } from 'luxon'
 import { INVALID, schemaKeys, Validator } from 'validator'
 import { emptyObject, objectEntries, objectKeys } from 'ytil'
 
-import Meta from './Meta.js'
-import Query, { Scope } from './Query.js'
-import { getModelMeta } from './registry.js'
-import { isVirtual } from './types/index.js'
-import { ID, ModelClass, ModelRaw } from './typings.js'
+import Meta from './Meta'
+import Query, { Scope } from './Query'
+import { getModelMeta } from './registry'
+import { isVirtual } from './types'
+import { ID, ModelClass, ModelRaw } from './typings'
 
 export default class Model {
 

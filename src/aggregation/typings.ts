@@ -1,6 +1,6 @@
-import Model from '../Model.js'
-import { ModelClass } from '../typings.js'
-import AggregationPipeline from './AggregationPipeline.js'
+import Model from '../Model'
+import { ModelClass } from '../typings'
+import AggregationPipeline from './AggregationPipeline'
 
 export type Stage =
   | MatchStage

@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb'
 
-import { testClient } from './client.js'
+import { testClient } from './client'
 
 describe("client", () => {
   let client: MongoClient

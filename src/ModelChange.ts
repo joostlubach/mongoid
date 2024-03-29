@@ -8,10 +8,10 @@ import {
 import { ObjectSchema, Validator } from 'validator'
 import { objectEntries, objectKeys } from 'ytil'
 
-import Model from './Model.js'
-import { ModelBackend } from './backend/index.js'
-import { getModelMeta } from './registry.js'
-import { ID, ModelClass } from './typings.js'
+import Model from './Model'
+import { ModelBackend } from './backend'
+import { getModelMeta } from './registry'
+import { ID, ModelClass } from './typings'
 
 export default class ModelChange<M extends Model> {
 

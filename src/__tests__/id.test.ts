@@ -1,10 +1,10 @@
 import { Collection, MongoClient, ObjectId } from 'mongodb'
 import { ID } from 'typings'
 
-import { ModelBackend } from '../backend/index.js'
-import { configure } from '../config.js'
-import { testClient } from './client.js'
-import { Parent } from './datamodel.js'
+import { ModelBackend } from '../backend'
+import { configure } from '../config'
+import { testClient } from './client'
+import { Parent } from './datamodel'
 
 describe("ID", () => {
   let parent: Parent

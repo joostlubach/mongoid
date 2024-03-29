@@ -1,2 +1,2 @@
-export { default as AggregationPipeline } from './AggregationPipeline.js'
-export * from './typings.js'
+export { default as AggregationPipeline } from './AggregationPipeline'
+export * from './typings'
