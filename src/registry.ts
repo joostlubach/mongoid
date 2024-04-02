@@ -6,11 +6,6 @@ import mongoid_Model from './Model'
 import { ConfigCommon, ModelClass, ModelConfig } from './typings'
 
 const REGISTRY: Array<[ModelClass<any>, Meta<any>]> = []
-const MODEL_META = new Meta(mongoid_Model, {
-  name:        'Model',
-  polymorphic: false,
-  schema:      {},
-})
 
 export function getModelClass<M extends mongoid_Model>(name: string, throwIfNotFound: false): ModelClass<M> | null
 export function getModelClass(name: 'Model'): ModelClass<mongoid_Model> | null
@@ -42,7 +37,7 @@ export function getModelMeta<M extends mongoid_Model>(nameOrModelClass: string |
 export function getModelMeta<M extends mongoid_Model>(nameOrModelClass: string | ModelClass<M>, throwIfNotFound?: true): Meta<M>
 export function getModelMeta(nameOrModelClass: string | ModelClass<any>, throwIfNotFound: boolean = true): Meta<any> | null {
   if (nameOrModelClass === 'Model' || nameOrModelClass === mongoid_Model) {
-    return MODEL_META
+    return defaultMeta()
   }
 
   const meta = REGISTRY.find(([Model, meta]) => {
@@ -87,6 +82,20 @@ export function model<M extends mongoid_Model>(name: string, options: ModelOptio
     const meta = new Meta(ModelClass, config)
     REGISTRY.push([ModelClass, meta])
   }
+}
+
+let _defaultMeta: Meta<mongoid_Model> | undefined
+
+function defaultMeta(): Meta<mongoid_Model> {
+  if (_defaultMeta == null) {
+    _defaultMeta = new Meta(mongoid_Model, {
+      name:        'Model',
+      polymorphic: false,
+      schema:      {},
+    })
+  }
+
+  return _defaultMeta
 }
 
 export type ModelOptions = MonoModelOptions<any> | PolyModelOptions<any>
