@@ -1,8 +1,8 @@
 import { isArray, isPlainObject } from 'lodash'
 import { objectEntries, objectValues } from 'ytil'
 
-import config from './config'
-import { Index } from './typings'
+import config from './config.js'
+import { Index } from './typings.js'
 
 export async function withClientStackTrace<T>(fn: () => PromiseLike<T> | T): Promise<T> {
   if (!config.clientStackTraces) {

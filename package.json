@@ -4,6 +4,7 @@
   "description": "Simple MongoDB ORM",
   "author": "Joost Lubach",
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": "./dist/index.js",
     "./backend": "./dist/backend/index.js",

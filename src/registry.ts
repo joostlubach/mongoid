@@ -1,9 +1,9 @@
 import { isObject } from 'lodash'
 import { ObjectSchema, ObjectSchemaMap } from 'validator'
 
-import Meta from './Meta'
-import mongoid_Model from './Model'
-import { ConfigCommon, ModelClass, ModelConfig } from './typings'
+import Meta from './Meta.js'
+import mongoid_Model from './Model.js'
+import { ConfigCommon, ModelClass, ModelConfig } from './typings.js'
 
 const REGISTRY: Array<[ModelClass<any>, Meta<any>]> = []
 const MODEL_META = new Meta(mongoid_Model, {

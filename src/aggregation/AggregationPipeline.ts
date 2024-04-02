@@ -1,8 +1,8 @@
 import { omit, omitBy } from 'lodash'
 
-import Model from '../Model'
-import { getModelMeta } from '../registry'
-import { ModelClass } from '../typings'
+import Model from '../Model.js'
+import { getModelMeta } from '../registry.js'
+import { ModelClass } from '../typings.js'
 import {
   AccumulatorSpec,
   AddFieldsStage,
@@ -17,7 +17,7 @@ import {
   SortStage,
   Stage,
   UnwindStage,
-} from './typings'
+} from './typings.js'
 
 export default class AggregationPipeline<M extends Model> {
 

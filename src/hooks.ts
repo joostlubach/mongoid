@@ -2,9 +2,9 @@ import { isFunction } from 'lodash'
 import { ValidatorResult } from 'validator'
 import { NestedWeakMap, TypedMethodDecorator } from 'ytil'
 
-import Model from './Model'
-import ModelBackend from './backend/ModelBackend'
-import { ModelClass } from './typings'
+import Model from './Model.js'
+import ModelBackend from './backend/ModelBackend.js'
+import { ModelClass } from './typings.js'
 
 const HOOKS = new NestedWeakMap<[ModelClass<any>, HookName], Set<string | symbol>>()
 

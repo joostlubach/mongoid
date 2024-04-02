@@ -2,10 +2,10 @@ import { isFunction, omit } from 'lodash'
 import { INVALID, OptionalType, RequiredType, Type, TypeOptions, ValidatorResult } from 'validator'
 import { isPlainObject } from 'ytil'
 
-import Model from '../Model'
-import { Reference } from '../backend'
-import { getModelClass } from '../registry'
-import { ID, IDOf, ModelClass } from '../typings'
+import Model from '../Model.js'
+import { Reference } from '../backend/index.js'
+import { getModelClass } from '../registry.js'
+import { ID, IDOf, ModelClass } from '../typings.js'
 
 export interface RefOptions<TRef extends Model, TParent extends Model> extends TypeOptions<Ref<TRef, TParent>> {
   /** The name of the model for the ref */

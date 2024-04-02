@@ -6,23 +6,23 @@ export {
 } from 'mongodb'
 export { MongoClient } from 'mongodb'
 
-export { default as Meta } from '../Meta'
-export { type Config, configure, default as config } from '../config'
-export { hook } from '../hooks'
-export { default as Aggregation } from './Aggregation'
+export { default as Meta } from '../Meta.js'
+export { type Config, configure, default as config } from '../config.js'
+export { hook } from '../hooks.js'
+export { default as Aggregation } from './Aggregation.js'
 export {
   type ChangeListener,
   type ChangeListenerOptions,
   type ChangeStreamOptions,
   default as ChangeStream,
   type RawChangeListener,
-} from './ChangeStream'
-export { default as Cursor } from './Cursor'
-export { default as ModelBackend } from './ModelBackend'
-export { default as QueryExecutor } from './QueryExecutor'
+} from './ChangeStream.js'
+export { default as Cursor } from './Cursor.js'
+export { default as ModelBackend } from './ModelBackend.js'
+export { default as QueryExecutor } from './QueryExecutor.js'
 export {
   default as ReferentialIntegrity,
   type Reference,
   ReferentialIntegrityError,
-} from './ReferentialIntegrity'
-export { connect } from './client'
+} from './ReferentialIntegrity.js'
+export { connect } from './client.js'

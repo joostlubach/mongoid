@@ -2,12 +2,12 @@ import chalk from 'chalk'
 import { isArray, some } from 'lodash'
 import { flatMap, isPlainObject, MapBuilder, modifyInObject, splitArray } from 'ytil'
 
-import Model from '../Model'
-import config from '../config'
-import { getAllModelClasses, getModelClass } from '../registry'
-import { Ref, RefDeleteStrategy, RefOptions } from '../types/ref'
-import { ID, ModelClass } from '../typings'
-import ModelBackend from './ModelBackend'
+import Model from '../Model.js'
+import config from '../config.js'
+import { getAllModelClasses, getModelClass } from '../registry.js'
+import { Ref, RefDeleteStrategy, RefOptions } from '../types/ref.js'
+import { ID, ModelClass } from '../typings.js'
+import ModelBackend from './ModelBackend.js'
 
 export default class ReferentialIntegrity<M extends Model> {
 
