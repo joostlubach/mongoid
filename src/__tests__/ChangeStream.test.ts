@@ -7,10 +7,10 @@ import {
 import { ValuedSemaphore } from 'semaphore'
 import { delay } from 'yest'
 
-import ModelChange, { ModelChangeType, UNKNOWN } from '../ModelChange.js'
-import { ChangeStream, ChangeStreamOptions, ModelBackend, MongoClient } from '../backend/index.js'
-import { testClient } from './client.js'
-import { Parent } from './datamodel.js'
+import ModelChange, { ModelChangeType, UNKNOWN } from '../ModelChange'
+import { ChangeStream, ChangeStreamOptions, ModelBackend, MongoClient } from '../backend'
+import { testClient } from './client'
+import { Parent } from './datamodel'
 
 const describe = process.env.CHANGE_STREAMS === '0' ? global.describe.skip : global.describe
 describe("ChangeStream", () => {

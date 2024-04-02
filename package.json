@@ -4,15 +4,31 @@
   "description": "Simple MongoDB ORM",
   "author": "Joost Lubach",
   "license": "MIT",
-  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./backend": "./dist/backend/index.js",
-    "./types": "./dist/types/index.js"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/cjs/index.js"
+    },
+    "./backend": {
+      "types": "./dist/types/backend/index.d.ts",
+      "import": "./dist/esm/backend/index.js",
+      "default": "./dist/cjs/backend/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/types/index.d.ts",
+      "import": "./dist/esm/types/index.js",
+      "default": "./dist/cjs/types/index.js"
+    }
   },
   "scripts": {
     "build": "pnpm clean && pnpm build:tsc",
-    "build:tsc": "tsc -p tsconfig.prod.json",
+    "build:tsc": "pnpm build:tsc:esm && pnpm build:tsc:cjs",
+    "build:tsc:esm": "tsc -p tsconfig.prod.json --module esnext --outDir dist/esm --declarationDir dist/types",
+    "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "check": "tsc -p . --noEmit",

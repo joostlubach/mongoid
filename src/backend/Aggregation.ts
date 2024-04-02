@@ -7,13 +7,13 @@ import {
   MongoClient,
 } from 'mongodb'
 
-import Model from '../Model.js'
-import { AggregationPipelineRaw } from '../aggregation/index.js'
-import config from '../config.js'
-import { getModelMeta } from '../registry.js'
-import { withClientStackTrace } from '../util.js'
-import Cursor from './Cursor.js'
-import ModelBackend from './ModelBackend.js'
+import Model from '../Model'
+import { AggregationPipelineRaw } from '../aggregation'
+import config from '../config'
+import { getModelMeta } from '../registry'
+import { withClientStackTrace } from '../util'
+import Cursor from './Cursor'
+import ModelBackend from './ModelBackend'
 
 export default class Aggregation<M extends Model> {
 

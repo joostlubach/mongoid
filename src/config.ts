@@ -3,7 +3,7 @@
 import { isFunction, merge } from 'lodash'
 import { ConnectOptions, ObjectId } from 'mongodb'
 
-import { ID, IDAdapter, IDGenerator } from './typings.js'
+import { ID, IDAdapter, IDGenerator } from './typings'
 
 export interface Config<I extends ID> {
   connect?: ConnectOptions
