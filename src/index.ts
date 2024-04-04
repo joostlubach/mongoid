@@ -9,3 +9,8 @@ export { type AsQuery, default as Query, type QueryRaw, Scope } from './Query'
 export { type Config, configure } from './config'
 export { PolymorphicRef } from './types'
 export { Ref } from './types/ref'
+
+export * from './aggregation'
+export * from './registry'
+export * from './hooks'
+export * from './typings'
