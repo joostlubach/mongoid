@@ -150,13 +150,16 @@ export default class Meta<M extends Model> {
       attributes.updatedAt = model.updatedAt
     }
 
-    // Add all other attributes.
+    // Add all other attributes. Coerce to `null` if necessary.
     for (const name of schemaKeys(schema)) {
       if (!includeVirtual && isVirtual(schema[name])) {
         continue
       }
 
       attributes[name] = (model as any)[name]
+      if (attributes[name] === undefined) {
+        attributes[name] = null
+      }
     }
 
     return attributes

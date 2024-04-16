@@ -26,3 +26,4 @@ export {
   ReferentialIntegrityError,
 } from './ReferentialIntegrity'
 export { connect } from './client'
+export * from './admin'
