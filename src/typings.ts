@@ -45,7 +45,6 @@ export interface ModelClass<M extends Model> extends Omit<typeof Model, 'new' | 
   prototype: M
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type IDOf<M extends Model> = ID
 
 /**
