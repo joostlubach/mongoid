@@ -193,18 +193,18 @@ export default class Model {
    *
    * @param attributes The attributes to hydrate with.
    */
-  public async deserialize(raw: ModelRaw) {
+  public async deserialize(raw: ModelRaw, partial: boolean = false) {
     const {id, updatedAt, createdAt, ...rest} = raw
 
-    const coerced = this.coerce(rest, false)
+    const coerced = this.coerce(rest, partial)
     if (Object.keys(coerced).length === 0) { return }
 
     Object.assign(this, coerced)
 
     this.originals = cloneDeep(this.attributes as Partial<this>)
     this.id = id!
-    this.updatedAt = updatedAt instanceof DateTime ? updatedAt : DateTime.fromJSDate(updatedAt)
-    this.createdAt = createdAt instanceof DateTime ? createdAt : DateTime.fromJSDate(createdAt)
+    this.updatedAt = updatedAt
+    this.createdAt = createdAt
     this.markPersisted()
   }
 
@@ -213,7 +213,7 @@ export default class Model {
    *
    * @param attributes The attributes to hydrate with.
    */
-  public static async deserialize<M extends Model>(this: ModelClass<M>, raw: ModelRaw): Promise<M> {
+  public static async deserialize<M extends Model>(this: ModelClass<M>, raw: ModelRaw, partial: boolean = false): Promise<M> {
     const model = new this()
     await model.deserialize(raw)
     return model
