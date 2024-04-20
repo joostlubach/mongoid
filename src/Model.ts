@@ -1,7 +1,7 @@
 import { cloneDeep, isEqual, some } from 'lodash'
 import { DateTime } from 'luxon'
-import { INVALID, schemaKeys, Validator } from 'validator'
-import { emptyObject, objectEntries, objectKeys } from 'ytil'
+import { INVALID, schemaEntries, schemaKeys, Validator } from 'validator'
+import { emptyObject, objectKeys } from 'ytil'
 
 import Meta from './Meta'
 import Query, { Scope } from './Query'
@@ -124,8 +124,8 @@ export default class Model {
 
     // Delete virtual properties.
     const schema = this.meta.schemaForModel(this)
-    for (const name of schemaKeys(schema)) {
-      if (isVirtual(schema[name])) {
+    for (const [name, attribute] of schemaEntries(schema)) {
+      if (isVirtual(attribute)) {
         delete (coerced as any)[name]
       }
     }
@@ -153,7 +153,7 @@ export default class Model {
       this.id = id
     }
 
-    if (Object.keys(rest).length > 0) {
+    if (objectKeys(rest).length > 0) {
       Object.assign(this, rest)
     }
   }
@@ -175,7 +175,7 @@ export default class Model {
       serialized.updatedAt = this.updatedAt
     } else {
       // Delete all virtual attributes.
-      const virtualKeys = objectEntries(this.schema)
+      const virtualKeys = schemaEntries(this.schema)
         .filter(it => isVirtual(it[1]))
         .map(it => it[0])
 
@@ -197,14 +197,14 @@ export default class Model {
     const {id, updatedAt, createdAt, ...rest} = raw
 
     const coerced = this.coerce(rest, partial)
-    if (Object.keys(coerced).length === 0) { return }
+    if (objectKeys(coerced).length === 0) { return }
 
     Object.assign(this, coerced)
 
     this.originals = cloneDeep(this.attributes as Partial<this>)
     this.id = id!
-    this.updatedAt = updatedAt
-    this.createdAt = createdAt
+    this.updatedAt = updatedAt instanceof Date ? DateTime.fromJSDate(updatedAt) : updatedAt
+    this.createdAt = createdAt instanceof Date ? DateTime.fromJSDate(createdAt) : createdAt
     this.markPersisted()
   }
 
@@ -229,7 +229,7 @@ export default class Model {
     if (objectKeys(this.originals).length === 0) { return true }
 
     if (attribute === undefined) {
-      const attributes = Object.keys(this.schema)
+      const attributes = schemaKeys(this.schema)
       return some(attributes, attribute => this.isModified(attribute))
     }
 
@@ -256,9 +256,9 @@ export default class Model {
   public getDiff<M extends Model>() {
     const attributes: Partial<M> = {}
 
-    for (const attr of Object.keys(this.schema)) {
-      if (!this.isModified(attr)) { continue }
-      (attributes as any)[attr] = this.get(attr)
+    for (const name of schemaKeys(this.schema)) {
+      if (!this.isModified(name)) { continue }
+      (attributes as any)[name] = this.get(name)
     }
 
     return attributes

@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import {
   ChangeStreamDeleteDocument,
   ChangeStreamDocument,
@@ -176,7 +177,9 @@ describe("ChangeStream", () => {
   })
 
   describe("model interface", () => {
+
     describe('insert', () => {
+      
       test("receiving .Create changes", async () => {
         const {semaphore} = await createStream()
 
@@ -188,17 +191,16 @@ describe("ChangeStream", () => {
           id:    expect.anything(),
 
           modifications: {
-            id:       {prevValue: undefined, nextValue: expect.anything()},
             name:     {prevValue: undefined, nextValue: "Parent 1"},
             age:      {prevValue: undefined, nextValue: null},
             children: {prevValue: undefined, nextValue: []},
 
-            updatedAt:   {prevValue: undefined, nextValue: expect.any(Date)},
-            createdAt:   {prevValue: undefined, nextValue: expect.any(Date)},
-            _references: {prevValue: undefined, nextValue: []},
+            updatedAt: {prevValue: undefined, nextValue: expect.any(DateTime)},
+            createdAt: {prevValue: undefined, nextValue: expect.any(DateTime)},
           },
         })
       })
+
     })
 
     describe('update', () => {
@@ -228,7 +230,7 @@ describe("ChangeStream", () => {
           parent.id,
           {
             name:      {prevValue: UNKNOWN, nextValue: "Parent 2"},
-            updatedAt: {prevValue: UNKNOWN, nextValue: expect.any(Date)},
+            updatedAt: {prevValue: UNKNOWN, nextValue: expect.any(DateTime)},
           },
         ))
       })
@@ -246,7 +248,7 @@ describe("ChangeStream", () => {
           parent.id,
           {
             name:      {prevValue: "Parent 1", nextValue: "Parent 2"},
-            updatedAt: {prevValue: expect.any(Date), nextValue: expect.any(Date)},
+            updatedAt: {prevValue: expect.any(DateTime), nextValue: expect.any(DateTime)},
           },
         ))
       })

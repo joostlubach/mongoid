@@ -1,4 +1,5 @@
 import { every, isArray, isEqual, size, some } from 'lodash'
+import { DateTime } from 'luxon'
 import {
   arrayEquals,
   isObject,
@@ -73,6 +74,9 @@ export default class FilterMatcher {
     if (condition instanceof Date) {
       return VALUE.$eq(value, condition.getTime(), recurse)
     }
+    if (condition instanceof DateTime) {
+      return VALUE.$eq(value, condition.toMillis(), recurse)
+    }
 
     // 3. Run through the condition. Each key that starts with '$' is interpreted as a filter function operating
     //    on the entire value. Other keys are interpreted as a condition for a nested property.
@@ -145,13 +149,11 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     if (value === condition) { return true }
 
     if (value instanceof Date) {
-      if (condition instanceof Date) {
-        return value.getTime() === condition.getTime()
-      } else if (typeof condition === 'number') {
-        return value.getTime() === condition
-      } else if (typeof condition === 'string') {
-        return value.getTime() === (new Date(condition)).getTime()
-      }
+      return value.getTime() === dateToMillis(condition)
+    }
+
+    if (value instanceof DateTime) {
+      return value.toMillis() === dateToMillis(condition)
     }
 
     if (isArray(value) && isArray(condition)) {
@@ -306,15 +308,15 @@ const VALUE: Record<string, ValueMatcherFunction> = {
   },
 
   $before(value, ref) {
-    value = value instanceof Date ? value : new Date(value)
-    ref = ref instanceof Date ? ref : new Date(ref)
+    value = dateToMillis(value)
+    ref = dateToDateTime(ref)
 
     return value < ref
   },
 
   $after(value, ref) {
-    value = value instanceof Date ? value : new Date(value)
-    ref = ref instanceof Date ? ref : new Date(ref)
+    value = dateToMillis(value)
+    ref = dateToDateTime(ref)
 
     return value > ref
   },
@@ -331,7 +333,7 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     } else if (ref === 'object') {
       return isPlainObject(values)
     } else if (ref === 'date') {
-      return values instanceof Date
+      return values instanceof Date || values instanceof DateTime
     } else if (ref === 'regex') {
       return values instanceof RegExp
     } else if (ref === 'null') {
@@ -359,4 +361,28 @@ const VALUE: Record<string, ValueMatcherFunction> = {
     return VALUE.$eq(value, ref, recurse)
   },
 
+}
+
+function dateToMillis(date: string | number | Date | DateTime) {
+  if (date instanceof Date) {
+    return date.getTime()
+  } else if (date instanceof DateTime) {
+    return date.toMillis()
+  } else if (typeof date === 'string') {
+    return (new Date(date)).getTime()
+  } else {
+    return date
+  }
+}
+
+function dateToDateTime(date: string | number | Date | DateTime) {
+  if (date instanceof Date) {
+    return DateTime.fromMillis(date.getTime())
+  } else if (date instanceof DateTime) {
+    return date
+  } else if (typeof date === 'string') {
+    return DateTime.fromMillis((new Date(date)).getTime())
+  } else {
+    return DateTime.fromMillis(date)
+  }
 }

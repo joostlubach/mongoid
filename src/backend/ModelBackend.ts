@@ -2,8 +2,8 @@ import chalk from 'chalk'
 import { isArray, isFunction, omitBy } from 'lodash'
 import { DateTime } from 'luxon'
 import { Collection, DeleteResult, Document, Filter, MongoClient, UpdateFilter } from 'mongodb'
-import { Validator, ValidatorResult } from 'validator'
-import { isPlainObject, MapBuilder, objectEntries, sparse } from 'ytil'
+import { schemaKeys, Validator, ValidatorResult } from 'validator'
+import { isPlainObject, MapBuilder, sparse } from 'ytil'
 
 import InvalidModelError from '../InvalidModelError'
 import Model from '../Model'
@@ -333,8 +333,10 @@ export default class ModelBackend<M extends Model> {
   private async validateUnique(model: M, result: ValidatorResult<this>) {
     const serialized = model.serialize()
 
-    for (const [attribute, type] of objectEntries(model.schema)) {
+    for (const attribute of schemaKeys(model.schema)) {
       if (typeof attribute !== 'string') { continue }
+
+      const type = model.schema[attribute]
       if (type.options.unique == null || type.options.unique === false) { continue }
       if (!model.isModified(attribute)) { continue }
 

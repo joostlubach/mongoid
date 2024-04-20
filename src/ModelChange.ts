@@ -1,4 +1,5 @@
 import { isEqual } from 'lodash'
+import { DateTime } from 'luxon'
 import {
   ChangeStreamDeleteDocument,
   ChangeStreamDocument,
@@ -84,13 +85,12 @@ export default class ModelChange<M extends Model> {
 
   private static async fromChangeStreamInsertDocument<M extends Model>(backend: ModelBackend<M>, doc: ChangeStreamInsertDocument) {
     const model = await backend.hydrate(doc.fullDocument)
-    const {_id: id, ...rest} = doc.fullDocument
 
     return new ModelChange(
       ModelChangeType.Create,
       backend.Model,
       model.id,
-      deriveModifications({}, {id, ...rest} as Partial<M>),
+      deriveModifications<M>({}, model),
     )
   }
 
@@ -103,6 +103,10 @@ export default class ModelChange<M extends Model> {
 
     const validator = new Validator()
     const coerce = (attribute: string, value: any) => {
+      if (attribute === 'updatedAt' || attribute === 'createdAt') {
+        return value instanceof DateTime ? value : DateTime.fromJSDate(value)
+      }
+
       const type = schema[attribute]
       if (type != null) {
         return validator.coerce(value, type, true)
@@ -116,7 +120,7 @@ export default class ModelChange<M extends Model> {
       if (typeof field !== 'string') { continue }
 
       change.modifications[field as keyof M] = {
-        prevValue: doc.fullDocumentBeforeChange == null ? UNKNOWN : doc.fullDocumentBeforeChange[field],
+        prevValue: doc.fullDocumentBeforeChange == null ? UNKNOWN : coerce(field, doc.fullDocumentBeforeChange[field]),
         nextValue: coerce(field, nextValue),
       }
     }
@@ -124,7 +128,7 @@ export default class ModelChange<M extends Model> {
     // Process removals.
     for (const field of doc.updateDescription.removedFields ?? []) {
       change.modifications[field as keyof M] = {
-        prevValue: doc.fullDocumentBeforeChange == null ? UNKNOWN : doc.fullDocumentBeforeChange[field],
+        prevValue: doc.fullDocumentBeforeChange == null ? UNKNOWN : coerce(field, doc.fullDocumentBeforeChange[field]),
         nextValue: undefined,
       }
     }
@@ -194,6 +198,9 @@ function deriveModifications<M extends Model>(prevAttributes: Partial<M>, nextAt
   for (const name of Object.keys(nextAttributes)) {
     allNames.add(name)
   }
+
+  allNames.delete('id')
+  allNames.delete('_references')
 
   // TODO: Deep derivation?
   const modifications: Modifications<M> = {}
