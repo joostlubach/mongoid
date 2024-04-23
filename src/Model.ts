@@ -166,14 +166,23 @@ export default class Model {
   /**
    * Serializes this model for sending over JSON.
    */
-  public serialize(includeVirtual: boolean = true): Document {
-    const attributes = this.meta.attributesForModel(this, includeVirtual)
+  public serialize(options: SerializeOptions = {}): Document {
+    const target = options.target ?? SerializeTarget.JSON
+    const virtual = options.target === SerializeTarget.MongoDB ? true : (options.virtual ?? true)
+
+    const attributes = this.meta.attributesForModel(this, virtual)
     const serialized = this.meta.modelType.serialize(attributes)
 
-    if (includeVirtual) {
-      serialized.id = this.id
-      serialized.createdAt = this.createdAt
-      serialized.updatedAt = this.updatedAt
+    if (virtual) {
+      if (target === SerializeTarget.MongoDB) {
+        serialized._id = this.mongoID
+        serialized.createdAt = this.createdAt?.toJSDate() ?? null
+        serialized.updatedAt = this.updatedAt?.toJSDate() ?? null
+      } else {
+        serialized.id = this.id
+        serialized.createdAt = this.createdAt
+        serialized.updatedAt = this.updatedAt
+      }
     } else {
       // Delete all virtual attributes.
       const virtualKeys = schemaEntries(this.schema)
@@ -203,7 +212,7 @@ export default class Model {
     Object.assign(this, coerced)
 
     this.originals = cloneDeep(this.attributes as Partial<this>)
-    this.id = id!
+    if (id != null) { this.id = id }
     this.updatedAt = updatedAt instanceof Date ? DateTime.fromJSDate(updatedAt) : updatedAt
     this.createdAt = createdAt instanceof Date ? DateTime.fromJSDate(createdAt) : createdAt
     this.markPersisted()
@@ -289,4 +298,13 @@ export default class Model {
 
   // #endregion
 
+}
+
+export type SerializeOptions = 
+  | {target?: SerializeTarget.JSON, virtual?: boolean}
+  | {target: SerializeTarget.MongoDB}
+
+export enum SerializeTarget {
+  JSON,
+  MongoDB
 }

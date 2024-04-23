@@ -6,7 +6,7 @@ import { schemaKeys, Validator, ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, sparse } from 'ytil'
 
 import InvalidModelError from '../InvalidModelError'
-import Model from '../Model'
+import Model, { SerializeTarget } from '../Model'
 import Query from '../Query'
 import config from '../config'
 import { callInstanceHook, callStaticHook } from '../hooks'
@@ -205,32 +205,35 @@ export default class ModelBackend<M extends Model> {
   }
 
   private async createModel(model: M) {
+    await model.ensureID()
+
     const now = DateTime.local()
-    const document = await this.buildInsertionDocument(model, now)
+    model.createdAt = now
+    model.updatedAt = now
+
+    const document = await this.buildInsertionDocument(model)
     await this.collection.insertOne(document, {
       bypassDocumentValidation: true,
     })
-    model.updatedAt = now
-    model.createdAt = now
   }
 
   private async updateModel(model: M) {
     const filter = {_id: model.mongoID} as Filter<any>
 
-    const now = DateTime.local()
-    const update = await this.buildUpdate(model, now)
+    model.updatedAt = DateTime.local()
+
+    const update = await this.buildUpdate(model)
     if (update == null) { return }
 
     await this.collection.updateOne(filter, update, {
       bypassDocumentValidation: true,
     })
-    model.updatedAt = now
   }
 
-  private async buildInsertionDocument(model: M, now: DateTime): Promise<Record<string, any>> {
-    await model.ensureID()
-
-    const data = this.escapeKeys(model.serialize(false))
+  private async buildInsertionDocument(model: M): Promise<Record<string, any>> {
+    const data = this.escapeKeys(model.serialize({
+      target: SerializeTarget.MongoDB,
+    }))
     for (const name of this.meta.config.transient ?? []) {
       delete data[name]
     }
@@ -238,23 +241,22 @@ export default class ModelBackend<M extends Model> {
     const referentialIntegrity = new ReferentialIntegrity(this)
     const document: Record<string, any> = {
       ...data,
-      _id:         model.mongoID,
       _references: referentialIntegrity.collectReferences(model),
-      updatedAt:   now.toJSDate(),
-      createdAt:   now.toJSDate(),
     }
     return document
   }
 
-  private async buildUpdate(model: M, now: DateTime): Promise<UpdateFilter<any> | null> {
-    const $set: Record<string, any> = {
-      updatedAt: now.toJSDate(),
-    }
+  private async buildUpdate(model: M): Promise<UpdateFilter<any> | null> {
+    const $set: Record<string, any> = {}
 
-    const serialized = this.escapeKeys(model.serialize(false))
+    const serialized = this.escapeKeys(model.serialize({
+      target: SerializeTarget.MongoDB,
+    }))
     for (const [name, value] of Object.entries(serialized)) {
+      if (name === '_id') { continue }
       if (!model.isModified(name as any)) { continue }
       if (this.meta.config.transient?.includes(name)) { continue }
+      
       $set[name] = value
     }
     if (Object.keys($set).length === 0) {

@@ -26,7 +26,7 @@ export default class Query<M extends Model> implements AsQuery<M> {
     const copy = new Query<M>(this.Model)
     copy._filters = cloneDeep(this._filters)
     copy._sorts = cloneDeep(this._sorts)
-    copy._projections = {...this._projections}
+    copy._projections = this._projections == null ? null : {...this._projections}
     copy._skipCount = this._skipCount
     copy._limitCount = this._limitCount
     copy._collation = this._collation
