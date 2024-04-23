@@ -394,8 +394,10 @@ export default class ModelBackend<M extends Model> {
     const model = new this.Model()
 
     const {_id, ...rest} = this.unescapeKeys(document)
-    const id = model.meta.idFromMongo(_id)
-    await model.deserialize({id, ...rest})
+    await model.deserialize({
+      _id: model.meta.idFromMongo(_id),
+      ...rest,
+    })
     return model
   }
 

@@ -1,4 +1,13 @@
-export { Collection, type CountOptions, Db, type Document, MongoClient, ObjectId } from 'mongodb'
+export {
+  MongoClient,
+  Db,
+  Collection,
+  ObjectId,
+  type CountOptions,
+  type Document,
+  FindCursor as mongodb_FindCursor,
+  AggregationCursor as mongodb_AggregationCursor,
+} from 'mongodb'
 
 export { default as FilterMatcher } from './FilterMatcher'
 export { default as InconsistencyError } from './InconsistencyError'
@@ -13,4 +22,5 @@ export { Ref } from './types/ref'
 export * from './aggregation'
 export * from './registry'
 export * from './hooks'
+export * from './util'
 export * from './typings'

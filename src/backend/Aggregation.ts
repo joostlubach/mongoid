@@ -1,14 +1,14 @@
 import chalk from 'chalk'
-import { omit, pick } from 'lodash'
+import { isArray } from 'lodash'
 import {
   AggregateOptions,
-  AggregationCursor as MongoAggregationCursor,
+  AggregationCursor as mongodb_AggregationCursor,
   Collection,
   MongoClient,
 } from 'mongodb'
 
 import Model from '../Model'
-import { AggregationPipelineRaw } from '../aggregation'
+import { AggregationPipeline, AggregationPipelineRaw } from '../aggregation'
 import config from '../config'
 import { getModelMeta } from '../registry'
 import { withClientStackTrace } from '../util'
@@ -18,14 +18,16 @@ import ModelBackend from './ModelBackend'
 export default class Aggregation<M extends Model> {
 
   constructor(
-    private client: MongoClient,
+    client: MongoClient,
     private backend: ModelBackend<M> | null,
-    private pipeline: AggregationPipelineRaw,
+    pipeline: AggregationPipeline<M> | AggregationPipelineRaw,
   ) {
-    this.collection = client.db().collection(pipeline.collection)
+    this.pipeline = pipeline instanceof AggregationPipeline ? pipeline.serialize() : pipeline
+    this.collection = client.db().collection(this.pipeline.collection)
   }
 
   private readonly collection: Collection
+  private readonly pipeline:   AggregationPipelineRaw
 
   private get Model() {
     return this.backend?.Model ?? null
@@ -66,26 +68,52 @@ export default class Aggregation<M extends Model> {
    *
    * @param property The property to pluck.
    */
-  public async pluck(property: string): Promise<any[]>
-  public async pluck(...properties: string[]): Promise<Array<{[property: string]: any}>>
-  public async pluck(...properties: string[]) {
-    return await withClientStackTrace(async () => {
-      const projection: Record<string, any> = {}
-      for (let property of properties) {
-        if (property === 'id') { property = '_id' }
-        projection[property] = 1
+
+
+  public pluck<K extends keyof M & string>(properties: K, options: PluckOptions & {cursor: true}): mongodb_AggregationCursor<M[K]>
+  public pluck<K extends keyof M & string>(properties: K[], options: PluckOptions & {cursor: true}): mongodb_AggregationCursor<{[property in K]: M[K]}>
+  public pluck<K extends keyof M & string>(properties: K | K[], options: PluckOptions & {cursor: true}): mongodb_AggregationCursor<M[K] | {[property in K]: M[K]}>
+
+  public pluck<K extends keyof M & string>(properties: K, options?: PluckOptions & {cursor: false}): Promise<Array<M[K]>>
+  public pluck<K extends keyof M & string>(properties: K[], options?: PluckOptions & {cursor: false}): Promise<Array<{[property in K]: M[K]}>>
+  public pluck<K extends keyof M & string>(properties: K | K[], options?: PluckOptions & {cursor: false}): Promise<Array<M[K] | {[property in K]: M[K]}>>
+
+  public pluck<K extends keyof M & string>(properties: K, options: PluckOptions): mongodb_AggregationCursor<M[K]> | Promise<Array<M[K]>>
+  public pluck<K extends keyof M & string>(properties: K[], options: PluckOptions): mongodb_AggregationCursor<{[property in K]: M[K]}> | Promise<Array<{[property in K]: M[K]}>>
+  public pluck<K extends keyof M & string>(properties: K | K[], options: PluckOptions): mongodb_AggregationCursor<M[K] | {[property in K]: M[K]}> | Promise<Array<M[K] | {[property in K]: M[K]}>>
+
+  public pluck<K extends keyof M & string>(properties: K | K[], options: PluckOptions = {}): mongodb_AggregationCursor<M[K] | {[property in K]: M[K]}> | Promise<Array<M[K] | {[property in K]: M[K]}>> {
+    const cursor = this.pluckCursor(properties)
+    if (options.cursor) {
+      return cursor
+    } else {
+      return withClientStackTrace(() => cursor.toArray())
+    }
+  }
+
+  private pluckCursor<K extends keyof M & string>(properties: K | K[]): mongodb_AggregationCursor<M[K] | {[property in K]: M[K]}> {
+    const projection: Record<string, any> = {}
+    for (let property of properties) {
+      if (property === 'id') { property = '_id' }
+      projection[property] = 1
+    }
+
+    const cursor = this.raw().project(projection)
+    return cursor.map(doc => {
+      const get = (prop: string) => {
+        if (prop === 'id' && this.backend != null) {
+          return this.backend.meta.idFromMongo(doc._id)
+        } else if (prop === 'id') {
+          return doc._id
+        } else {
+          return doc[prop]
+        }
       }
 
-      let rows = await this.toRawArray()
-      rows = rows.map(row => ({
-        id: this.meta?.idFromMongo(row._id) ?? row._id,
-        ...omit(row, '_id'),
-      }))
-
-      if (properties.length === 1) {
-        return rows.map(row => row[properties[0]])
+      if (isArray(properties)) {
+        return properties.reduce((result, prop) => ({...result, [prop]: get(prop)}), {})
       } else {
-        return rows.map(row => pick(row, properties))
+        return get(properties[0])
       }
     })
   }
@@ -112,7 +140,7 @@ export default class Aggregation<M extends Model> {
   /**
    * Runs the query and retrieves a raw MongoDB cursor.
    */
-  public raw(options: AggregateOptions = {}): MongoAggregationCursor {
+  public raw(options: AggregateOptions = {}): mongodb_AggregationCursor {
     if (config.traceEnabled) {
       config.logger.debug(chalk`AGG {bold ${this.Model?.name ?? this.collection.collectionName}} {dim ${JSON.stringify(this.pipeline.stages)}}`)
     }
@@ -129,3 +157,7 @@ export default class Aggregation<M extends Model> {
 }
 
 export interface RunOptions extends AggregateOptions {}
+
+export interface PluckOptions {
+  cursor?: boolean
+}

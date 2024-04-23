@@ -1,5 +1,6 @@
 import { cloneDeep, isEqual, some } from 'lodash'
 import { DateTime } from 'luxon'
+import { Document } from 'mongodb'
 import { INVALID, schemaEntries, schemaKeys, Validator } from 'validator'
 import { emptyObject, objectKeys } from 'ytil'
 
@@ -7,7 +8,7 @@ import Meta from './Meta'
 import Query, { Scope } from './Query'
 import { getModelMeta } from './registry'
 import { isVirtual } from './types'
-import { ID, ModelClass, ModelRaw } from './typings'
+import { ID, ModelClass } from './typings'
 
 export default class Model {
 
@@ -165,7 +166,7 @@ export default class Model {
   /**
    * Serializes this model for sending over JSON.
    */
-  public serialize(includeVirtual: boolean = true): ModelRaw {
+  public serialize(includeVirtual: boolean = true): Document {
     const attributes = this.meta.attributesForModel(this, includeVirtual)
     const serialized = this.meta.modelType.serialize(attributes)
 
@@ -193,8 +194,8 @@ export default class Model {
    *
    * @param attributes The attributes to hydrate with.
    */
-  public async deserialize(raw: ModelRaw, partial: boolean = false) {
-    const {id, updatedAt, createdAt, ...rest} = raw
+  public async deserialize(raw: Document, partial: boolean = false) {
+    const {_id: id, updatedAt, createdAt, ...rest} = raw
 
     const coerced = this.coerce(rest, partial)
     if (objectKeys(coerced).length === 0) { return }
@@ -213,7 +214,7 @@ export default class Model {
    *
    * @param attributes The attributes to hydrate with.
    */
-  public static async deserialize<M extends Model>(this: ModelClass<M>, raw: ModelRaw, partial: boolean = false): Promise<M> {
+  public static async deserialize<M extends Model>(this: ModelClass<M>, raw: Document): Promise<M> {
     const model = new this()
     await model.deserialize(raw)
     return model

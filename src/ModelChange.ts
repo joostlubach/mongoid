@@ -165,7 +165,7 @@ export default class ModelChange<M extends Model> {
     }
 
     const query = backend.Model.filter({_id: doc.documentKey._id})
-    const types = await backend.query(query).pluck('type')
+    const types = await backend.query(query).pluck('type' as keyof M & string)
     if (types.length === 0) {
       throw new Error(`Cannot determine type of document with id \`${doc.documentKey._id}\``)
     }

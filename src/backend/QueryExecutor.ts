@@ -1,14 +1,14 @@
 import chalk from 'chalk'
-import { mapKeys, omit } from 'lodash'
+import { isArray, mapKeys, omit } from 'lodash'
 import {
   AggregateOptions,
   CountDocumentsOptions,
   DeleteResult,
   Document,
-  FindCursor as MongoCursor,
+  FindCursor as mongodb_FindCursor,
   UpdateResult,
 } from 'mongodb'
-import { sparse } from 'ytil'
+import { sparse, wrapArray } from 'ytil'
 
 import Model from '../Model'
 import Query from '../Query'
@@ -121,31 +121,48 @@ export default class QueryExecutor<M extends Model> {
 
   // #region Iteration
 
-  public async pluck<T = any>(property: string): Promise<T[]>
-  public async pluck<T = any>(firstProperty: string, ...properties: string[]): Promise<Array<{[property: string]: T}>>
-  public async pluck(...properties: string[]) {
-    return await withClientStackTrace(async () => {
-      const project = properties.reduce((project, prop) => ({
-        ...project,
-        [prop === 'id' ? '_id' : prop]: 1,
-      }), {})
+  public pluck<K extends keyof M & string>(properties: K, options: PluckOptions & {cursor: true}): mongodb_FindCursor<M[K]>
+  public pluck<K extends keyof M & string>(properties: K[], options: PluckOptions & {cursor: true}): mongodb_FindCursor<{[property in K]: M[K]}>
+  public pluck<K extends keyof M & string>(properties: K | K[], options: PluckOptions & {cursor: true}): mongodb_FindCursor<M[K] | {[property in K]: M[K]}>
 
-      const values: any[] = []
-      const cursor = this.runQueryRaw(this.query.project(project))
+  public pluck<K extends keyof M & string>(properties: K, options?: PluckOptions & {cursor: false}): Promise<Array<M[K]>>
+  public pluck<K extends keyof M & string>(properties: K[], options?: PluckOptions & {cursor: false}): Promise<Array<{[property in K]: M[K]}>>
+  public pluck<K extends keyof M & string>(properties: K | K[], options?: PluckOptions & {cursor: false}): Promise<Array<M[K] | {[property in K]: M[K]}>>
 
-      for await (const doc of cursor) {
-        const get = (prop: string) => (
-          prop === 'id'
-            ? this.backend.meta.idFromMongo(doc._id)
-            : doc[prop]
-        )
-        if (properties.length === 1) {
-          values.push(get(properties[0]))
+  public pluck<K extends keyof M & string>(properties: K, options: PluckOptions): mongodb_FindCursor<M[K]> | Promise<Array<M[K]>>
+  public pluck<K extends keyof M & string>(properties: K[], options: PluckOptions): mongodb_FindCursor<{[property in K]: M[K]}> | Promise<Array<{[property in K]: M[K]}>>
+  public pluck<K extends keyof M & string>(properties: K | K[], options: PluckOptions): mongodb_FindCursor<M[K] | {[property in K]: M[K]}> | Promise<Array<M[K] | {[property in K]: M[K]}>>
+
+  public pluck<K extends keyof M & string>(properties: K | K[], options: PluckOptions = {}): mongodb_FindCursor<M[K] | {[property in K]: M[K]}> | Promise<Array<M[K] | {[property in K]: M[K]}>> {
+    const cursor = this.pluckCursor(properties)
+    if (options.cursor) {
+      return cursor
+    } else {
+      return withClientStackTrace(() => cursor.toArray())
+    }
+  }
+
+  private pluckCursor<K extends keyof M & string>(properties: K | K[]): mongodb_FindCursor<M[K] | {[property in K]: M[K]}> {
+    const projection = wrapArray(properties).reduce((project, prop) => ({
+      ...project,
+      [prop === 'id' ? '_id' : prop]: 1,
+    }), {})
+
+    const cursor = this.runQueryRaw(this.query.project(projection))
+    return cursor.map<M[K]>(doc => {
+      const get = (prop: string) => {
+        if (prop === 'id') {
+          return this.backend.meta.idFromMongo(doc._id)
         } else {
-          values.push(properties.reduce((result, prop) => ({...result, [prop]: get(prop)}), {}))
+          return doc[prop]
         }
       }
-      return values
+
+      if (isArray(properties)) {
+        return properties.reduce((result, prop) => ({...result, [prop]: get(prop)}), {})
+      } else {
+        return get(properties[0])
+      }
     })
   }
 
@@ -202,11 +219,11 @@ export default class QueryExecutor<M extends Model> {
   /**
    * Runs the this.query and retrieves a raw MongoDB cursor.
    */
-  public raw(options: RunQueryRawOptions = {}): MongoCursor {
+  public raw(options: RunQueryRawOptions = {}): mongodb_FindCursor {
     return this.runQueryRaw(this.query, options)
   }
 
-  private runQueryRaw(query: Query<M>, options: RunQueryRawOptions = {}): MongoCursor {
+  private runQueryRaw(query: Query<M>, options: RunQueryRawOptions = {}): mongodb_FindCursor {
     const {label} = options
 
     let cursor = this.collection.find(this.filters)
@@ -276,6 +293,10 @@ export interface QueryExecutorOptions {
 export interface CountOptions extends AggregateOptions {
   skip?:  number | null
   limit?: number | null
+}
+
+export interface PluckOptions {
+  cursor?: boolean
 }
 
 interface RunQueryRawOptions {
