@@ -11,10 +11,12 @@ import { delay } from 'yest'
 import ModelChange, { ModelChangeType, UNKNOWN } from '../ModelChange'
 import { ChangeStream, ChangeStreamOptions, ModelBackend, MongoClient } from '../backend'
 import { testClient } from './client'
-import { Parent } from './datamodel'
+import { Parent } from './datamodel/family'
 
 const describe = process.env.CHANGE_STREAMS === '0' ? global.describe.skip : global.describe
+
 describe("ChangeStream", () => {
+
   let client:    MongoClient
   let backend:   ModelBackend<Parent>
 
@@ -294,4 +296,5 @@ describe("ChangeStream", () => {
       return {stream, semaphore}
     }
   })
+
 })

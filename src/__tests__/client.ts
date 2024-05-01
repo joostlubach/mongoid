@@ -24,7 +24,7 @@ afterEach(async () => {
 })
 
 beforeAll(async () => {
-  if (process.env.DROP_TEST_DBS) {
+  if (process.env.DROP_TEST_DBS !== '0') {
     await dropTestDatabases()
   }
 })
@@ -34,7 +34,7 @@ async function dropTestDatabases() {
   await client.connect()
 
   const dbs = await client.db().admin().listDatabases()
-  const prefix = 'mongoid:test-'
+  const prefix = 'mongoid-test-'
   const names = dbs.databases.filter(db => db.name.startsWith(prefix)).map(db => db.name)
   const promises = names.map(it => client.db(it).dropDatabase())
   await Promise.all(promises)

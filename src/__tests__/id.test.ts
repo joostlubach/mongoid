@@ -4,7 +4,7 @@ import { ModelBackend } from '../backend'
 import { configure } from '../config'
 import { ID } from '../typings'
 import { testClient } from './client'
-import { Parent } from './datamodel'
+import { Parent } from './datamodel/family'
 
 describe("ID", () => {
   let parent: Parent

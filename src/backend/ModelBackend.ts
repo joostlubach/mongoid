@@ -25,10 +25,6 @@ export default class ModelBackend<M extends Model> {
     public readonly Model: ModelClass<M>,
   ) {}
 
-  public cloneFor<M extends Model>(Model: ModelClass<M>) {
-    return new ModelBackend(this.client, Model)
-  }
-
   // #region Meta
 
   public get meta() {
@@ -93,7 +89,7 @@ export default class ModelBackend<M extends Model> {
       return this.refCache.get(ref) as M2 | null
     }
 
-    const backend = this.cloneFor(ref.Model)
+    const backend = new ModelBackend(this.client, ref.Model)
     const model = await backend.query().get(ref.id)
     this.refCache.set(ref, model)
     return model
@@ -170,6 +166,31 @@ export default class ModelBackend<M extends Model> {
 
   // #endregion
 
+  // #region Update
+
+  /**
+   * Updates a model by ID or model instance.
+   * 
+   * @param modelOrID
+   *   The model instance or ID of the model to update.
+   * @param attributes 
+   *   The new attribute values to update. Attributes that are not specified are left in place.
+   * @param options
+   *   Any options passed to the {@linkcode save} method.
+   * @returns 
+   *   The updated model instance, or `null` if an ID to a nonexisting model was specified.
+   */
+  public async update(modelOrID: M | IDOf<M>, attributes: Record<string, any>, options?: SaveOptions) {
+    const model = modelOrID instanceof Model ? modelOrID : await this.query().get(modelOrID)
+    if (model == null) { return null }
+
+    model.assign(attributes)
+    await this.save(model, options)
+    return model
+  }
+
+  // #endregion
+
   // #region Save
 
   /**
@@ -238,7 +259,7 @@ export default class ModelBackend<M extends Model> {
       delete data[name]
     }
 
-    const referentialIntegrity = new ReferentialIntegrity(this)
+    const referentialIntegrity = new ReferentialIntegrity(this.client)
     const document: Record<string, any> = {
       ...data,
       _references: referentialIntegrity.collectReferences(model),
@@ -263,7 +284,7 @@ export default class ModelBackend<M extends Model> {
       return null
     }
 
-    const referentialIntegrity = new ReferentialIntegrity(this)
+    const referentialIntegrity = new ReferentialIntegrity(this.client)
     return {
       $set: {
         ...$set,
@@ -278,10 +299,12 @@ export default class ModelBackend<M extends Model> {
 
   public async delete(query: Query<M>): Promise<DeleteResult>
   public async delete(model: M): Promise<DeleteResult>
-  public async delete(queryOrModel: Query<M> | M): Promise<DeleteResult> {
-    const query = queryOrModel instanceof Model
-      ? this.Model.filter({id: queryOrModel.id}).limit(1)
-      : queryOrModel
+  public async delete(id: IDOf<M>): Promise<DeleteResult>
+  public async delete(queryOrModel: Query<M> | M | IDOf<M>): Promise<DeleteResult> {
+    const query =
+      queryOrModel instanceof Query ? queryOrModel :
+        queryOrModel instanceof Model ? this.Model.filter({id: queryOrModel.id}).limit(1) :
+          this.Model.filter({id: queryOrModel}).limit(1)
 
     if (query.limitCount != null && query.limitCount !== 1) {
       throw new Error("Can only delete one single model or all models matched by a query.")
@@ -290,8 +313,8 @@ export default class ModelBackend<M extends Model> {
     const models = await this.query(query).find()
 
     await Promise.all(models.map(it => callInstanceHook(it, 'beforeDelete', this)))
-    const integrity = new ReferentialIntegrity(this)
-    await integrity.processDeletion(models.map(it => it.id))
+    const integrity = new ReferentialIntegrity(this.client)
+    await integrity.processDeletion(this.Model, models.map(it => it.id))
 
     const result = query.limitCount === 1
       ? await this.query(query).deleteOne()

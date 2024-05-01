@@ -168,9 +168,9 @@ export default class QueryExecutor<M extends Model> {
 
   // #endregion
 
-  // #region Update & delete
+  // #region Fast updates & deletes without hooks or refint checks
 
-  public async updateAll(updates: Record<string, any>): Promise<UpdateResult> {
+  public async fastUpdate(updates: Record<string, any>): Promise<UpdateResult> {
     return await withClientStackTrace(
       () => this.collection.updateMany(this.filters(this.query), updates),
     )

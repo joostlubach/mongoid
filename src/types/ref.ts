@@ -22,6 +22,12 @@ export interface RefOptions<TRef extends Model, TParent extends Model> extends T
   onDelete?: RefDeleteStrategy<TParent>
 
   /**
+   * Set to true to automatically delete the items in the array when the parent is deleted.
+   * Note: this is different from `onDelete: 'cascade'` which deletes the parent when the referenced object is deleted.
+   */
+  cascadeDelete?: boolean
+
+  /**
    * Set to true to always include this ref when the containing model is loaded.
    */
   include?: RefInclude
@@ -43,7 +49,7 @@ export type RefDeleteStrategy<TParent extends Model> =
   /** Custom. */
   | CustomDeleteStrategy<TParent>
 
-export type CustomDeleteStrategy<TParent extends Model> = ((model: TParent, reference: Reference) => boolean | Promise<boolean>)
+export type CustomDeleteStrategy<TParent extends Model> = ((model: TParent, reference: Reference) => void | Promise<void>)
 
 export const RefDeleteStrategy: {
   isSetStrategy:    (strategy: RefDeleteStrategy<any>) => strategy is {$set: ID}
@@ -72,7 +78,7 @@ export function ref(options: RefOptions<any, any>): Type<any, any> {
 
       if (value instanceof Ref) { return value }
 
-      const foreignKey = options.foreignKey || 'id'
+      const foreignKey = options.foreignKey ?? 'id'
 
       if (ID.isID(value)) {
         return new Ref(Model, value, omit(options, 'model'))
