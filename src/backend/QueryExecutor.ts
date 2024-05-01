@@ -39,10 +39,10 @@ export default class QueryExecutor<M extends Model> {
     }
   }
 
-  private get filters() {
-    if (this.query.filters.length === 0) { return {} }
+  private filters(query: Query<M>) {
+    if (query.filters.length === 0) { return {} }
 
-    const filters = this.query.filters.map(filter => {
+    const filters = query.filters.map(filter => {
       const {id, ...rest} = filter
       const transformed = {...rest}
       if (id != null) {
@@ -54,8 +54,8 @@ export default class QueryExecutor<M extends Model> {
     return {$and: filters}
   }
 
-  private get sorts() {
-    const {id, ...rest} = this.query.sorts
+  private sorts(query: Query<M>) {
+    const {id, ...rest} = query.sorts
     const transformed = {...rest}
     if (id != null) {
       transformed._id = id
@@ -83,7 +83,7 @@ export default class QueryExecutor<M extends Model> {
     }
 
     return await withClientStackTrace(() => (
-      this.collection.countDocuments(this.filters, countDocumentsOptions)
+      this.collection.countDocuments(this.filters(this.query), countDocumentsOptions)
     ))
   }
 
@@ -161,7 +161,7 @@ export default class QueryExecutor<M extends Model> {
       if (isArray(properties)) {
         return properties.reduce((result, prop) => ({...result, [prop]: get(prop)}), {})
       } else {
-        return get(properties[0])
+        return get(properties)
       }
     })
   }
@@ -172,19 +172,19 @@ export default class QueryExecutor<M extends Model> {
 
   public async updateAll(updates: Record<string, any>): Promise<UpdateResult> {
     return await withClientStackTrace(
-      () => this.collection.updateMany(this.filters, updates),
+      () => this.collection.updateMany(this.filters(this.query), updates),
     )
   }
 
   public async deleteOne(): Promise<DeleteResult> {
     return await withClientStackTrace(
-      () => this.collection.deleteOne(this.filters),
+      () => this.collection.deleteOne(this.filters(this.query)),
     )
   }
 
   public async deleteAll(): Promise<DeleteResult> {
     return await withClientStackTrace(
-      () => this.collection.deleteMany(this.filters),
+      () => this.collection.deleteMany(this.filters(this.query)),
     )
   }
 
@@ -226,7 +226,7 @@ export default class QueryExecutor<M extends Model> {
   private runQueryRaw(query: Query<M>, options: RunQueryRawOptions = {}): mongodb_FindCursor {
     const {label} = options
 
-    let cursor = this.collection.find(this.filters)
+    let cursor = this.collection.find(this.filters(query))
     if (query.collation != null) {
       cursor = cursor.collation(query.collation)
     }
@@ -234,7 +234,7 @@ export default class QueryExecutor<M extends Model> {
       const projections = serializeProjections(query.projections)
       cursor = cursor.project(projections)
     }
-    cursor = cursor.sort(this.sorts)
+    cursor = cursor.sort(this.sorts(query))
     if (query.skipCount != null) {
       cursor = cursor.skip(query.skipCount)
     }
