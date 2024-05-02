@@ -64,6 +64,8 @@ describe("collecting references", () => {
     ])
   })
 
+  it.todo("should store references in a global collection")
+
   it("should denotate any other strategy than cascade or delete as 'other'", async () => {
     const alice = await players.update('alice', {
       hand:              ['♦A', '♦K'],
@@ -80,7 +82,7 @@ describe("collecting references", () => {
   })
 
   it("should not include any references with a strategy 'ignore'", async () => {
-    const alice = await players.update('alice', {ignoredCard: '♦1'})
+    const alice = await players.update('alice', {ignoredCard: '♦K'})
 
     const refint = new ReferentialIntegrity(client)
     expect(refint.collectReferences(alice!)).toEqual([
@@ -280,14 +282,14 @@ describe("deletion", () => {
       }
 
       await players.update('alice', {
-        hand:       ['♦2', '♦J'],
+        hand:       ['♦10', '♦J'],
         customCard: '♦K',
       })
 
       await cards.delete('♦K')
 
       const alice = await players.query().get('alice')
-      expect(alice!.customCard?.id).toEqual('♦2')
+      expect(alice!.customCard?.id).toEqual('♦10')
     })
 
   })

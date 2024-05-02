@@ -1,7 +1,15 @@
 import chalk from 'chalk'
 import { isArray, isFunction, omitBy } from 'lodash'
 import { DateTime } from 'luxon'
-import { Collection, DeleteResult, Document, Filter, MongoClient, UpdateFilter } from 'mongodb'
+import {
+  BulkWriteOptions,
+  Collection,
+  DeleteResult,
+  Document,
+  Filter,
+  MongoClient,
+  UpdateFilter,
+} from 'mongodb'
 import { schemaKeys, Validator, ValidatorResult } from 'validator'
 import { isPlainObject, MapBuilder, sparse } from 'ytil'
 
@@ -117,10 +125,25 @@ export default class ModelBackend<M extends Model> {
    * @returns
    *  The created model.
    */
-  public async create(attributes: Record<string, any> = {}) {
+  public async create(attributes: Record<string, any> = {}, options: SaveOptions = {}) {
     const model = new this.Model(attributes)
-    await this.save(model)
+    await this.save(model, options)
     return model
+  }
+
+  public async createMany(attributes: Record<string, any>[], options: CreateManyOptions = {}) {
+    const {validate = true, ...rest} = options
+
+    const models = attributes.map(it => new this.Model(it))
+
+    if (validate) {
+      await Promise.all(models.map(it => this.validate(it)))
+    }
+
+    const documents = await Promise.all(models.map(it => this.buildInsertionDocument(it)))
+    await this.collection.insertMany(documents, rest)
+
+    return models
   }
 
   /**
@@ -453,4 +476,8 @@ export default class ModelBackend<M extends Model> {
 
 export interface InitializeOptions {
   createIndexes?: boolean
+}
+
+export interface CreateManyOptions extends BulkWriteOptions {
+  validate?: boolean
 }

@@ -84,6 +84,10 @@ export function model<M extends mongoid_Model>(name: string, options: ModelOptio
   }
 }
 
+export function clearRegistry() {
+  REGISTRY.splice(0)
+}
+
 let _defaultMeta: Meta<mongoid_Model> | undefined
 
 function defaultMeta(): Meta<mongoid_Model> {

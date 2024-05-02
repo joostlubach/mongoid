@@ -4,7 +4,7 @@ import { ValidatorResult } from 'validator'
 import Model from '../Model'
 import { ModelBackend } from '../backend'
 import { hook } from '../hooks'
-import { model } from '../registry'
+import { clearRegistry, model } from '../registry'
 import { testClient } from './client'
 
 describe('hooks', () => {
@@ -14,9 +14,14 @@ describe('hooks', () => {
     client = await testClient()
   })
 
+  afterEach(() => {
+    clearRegistry()
+  })
+
   describe('initialize', () => {})
 
   describe('beforeValidate', () => {
+
     it("allows specifying a callback to run before validation", async () => {
       @model('TestModel', {schema: {}})
       class TestModel extends Model {
@@ -34,9 +39,11 @@ describe('hooks', () => {
       await backend.validate(test)
       expect(spy).toHaveBeenCalledTimes(1)
     })
+
   })
 
   describe('validate', () => {
+
     it("allows specifying a callback to run when validating", async () => {
       @model('TestModel', {schema: {}})
       class TestModel extends Model {
@@ -55,9 +62,19 @@ describe('hooks', () => {
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy).toHaveBeenCalledWith(expect.any(ValidatorResult))
     })
+
   })
 
-  describe('beforeSave', () => {})
-  describe('afterSave', () => {})
-  describe('beforeDelete', () => {})
+  describe('beforeSave', () => {
+    it.todo("should run at some point")
+  })
+
+  describe('afterSave', () => {
+    it.todo("should run at some point")
+  })
+
+  describe('beforeDelete', () => {
+    it.todo("should run at some point")
+  })
+
 })

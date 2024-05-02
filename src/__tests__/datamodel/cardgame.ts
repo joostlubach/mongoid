@@ -88,9 +88,9 @@ export async function createGame(client: MongoClient, attributes: Record<string,
   const deck = await buildDeck(client)
 
   const alice = await players.ensure({id: 'alice'}, {name: "Alice", unsetRequiredCard: '♦A'})
-  const bob = await players.ensure({id: 'bob'}, {name: "Bob", unsetRequiredCard: '♣A'})
-  const charlie = await players.ensure({id: 'charlie'}, {name: "Charlie", unsetRequiredCard: '♠A'})
-  const dolores = await players.ensure({id: 'dolores'}, {name: "Dolores", unsetRequiredCard: '♥A'})
+  const bob = await players.ensure({id: 'bob'}, {name: "Bob", unsetRequiredCard: '♦A'})
+  const charlie = await players.ensure({id: 'charlie'}, {name: "Charlie", unsetRequiredCard: '♦A'})
+  const dolores = await players.ensure({id: 'dolores'}, {name: "Dolores", unsetRequiredCard: '♦A'})
 
   const id = attributes.cascadeLeader ?? attributes.deleteLeader ?? 'alice'
 
@@ -105,22 +105,24 @@ export async function createGame(client: MongoClient, attributes: Record<string,
 export async function buildDeck(client: MongoClient) {
   const cards = new ModelBackend(client, Card)
 
-  const deck: Card[] = []
-  for (const suit of ['♦', '♣', '♠', '♥']) {
-    for (const value of ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']) {
+  const deck = await cards.query().run().toArray()
+  if (deck.length > 0) { return deck }
+
+  const attributes: Record<string, any>[] = []
+  for (const suit of ['♦']) {
+    for (const value of ['10', 'J', 'Q', 'K', 'A']) {
       const id = `${suit}${value}`
-      const card = await cards.ensure({id}, {suit, value})
-      deck.push(card)
+      attributes.push({id, suit, value})
     }
   }
 
-  return deck
+  return await cards.createMany(attributes)
 }
 
 export function deckIDs() {
   const ids: string[] = []
-  for (const suit of ['♦', '♣', '♠', '♥']) {
-    for (const value of ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']) {
+  for (const suit of ['♦']) {
+    for (const value of ['10', 'J', 'Q', 'K', 'A']) {
       ids.push(`${suit}${value}`)
     }
   }
