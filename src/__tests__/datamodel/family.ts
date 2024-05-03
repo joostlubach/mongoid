@@ -6,6 +6,7 @@ import { TypedModel } from '../../typings'
 const parentSchema = {
   name:     string(),
   age:      number({required: false}),
+  job:      string({required: false}),
   children: array({
     itemType: ref({model: 'Child'}),
     default:  () => [],

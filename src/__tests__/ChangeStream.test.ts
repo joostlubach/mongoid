@@ -54,6 +54,7 @@ describe("ChangeStream", () => {
           _id:         expect.anything(),
           name:        "Parent 1",
           age:         null,
+          job:         null,
           children:    [],
           createdAt:   expect.any(Date),
           updatedAt:   expect.any(Date),
@@ -195,6 +196,7 @@ describe("ChangeStream", () => {
           modifications: {
             name:     {prevValue: undefined, nextValue: "Parent 1"},
             age:      {prevValue: undefined, nextValue: null},
+            job:      {prevValue: undefined, nextValue: null},
             children: {prevValue: undefined, nextValue: []},
 
             updatedAt: {prevValue: undefined, nextValue: expect.any(DateTime)},
