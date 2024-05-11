@@ -50,6 +50,7 @@
   "devDependencies": {
     "@jest/types": "^29.6.3",
     "@types/inflected": "^1.1.29",
+    "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.0",
     "@types/luxon": "^3.4.2",
     "copyfiles": "^2.4.1",
