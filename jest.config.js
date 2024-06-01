@@ -12,6 +12,6 @@ module.exports = {
       }
     ],
   },
-  testMatch: ['<rootDir>/src/**/*.test.ts'],
+  testMatch: process.env.INTEGRATION_TESTS ? ['**/*.integrationtest.ts'] : ['**/*.test.ts'],
   testEnvironment: 'node'
 }
