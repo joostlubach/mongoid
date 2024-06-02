@@ -17,7 +17,7 @@ export { default as ModelChange, ModelChangeType, type Modifications, UNKNOWN } 
 export { type AsQuery, default as Query, type QueryRaw, Scope } from './Query'
 export { type Config, configure } from './config'
 export { PolymorphicRef } from './types'
-export { Ref } from './types/ref'
+export { Ref, type AsRef } from './types/ref'
 
 export * from './aggregation'
 export * from './registry'

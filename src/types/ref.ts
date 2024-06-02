@@ -153,3 +153,5 @@ export class Ref<TRef extends Model, TParent extends Model = Model> {
 }
 
 export type RefInclude = 'always' | 'never' | 'auto'
+
+export type AsRef<M extends Model> = M | IDOf<M> | Ref<M>
