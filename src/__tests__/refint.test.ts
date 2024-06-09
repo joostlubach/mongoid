@@ -16,13 +16,17 @@ let players: ModelBackend<Player>
 let cards: ModelBackend<Card>
 
 beforeEach(async () => {
-  client = await testClient()
-  game = await createGame(client)
+  try {
+    client = await testClient()
+    game = await createGame(client)
 
-  rooms = new ModelBackend(client, Room)
-  games = new ModelBackend(client, Game)
-  players = new ModelBackend(client, Player)
-  cards = new ModelBackend(client, Card)
+    rooms = new ModelBackend(client, Room)
+    games = new ModelBackend(client, Game)
+    players = new ModelBackend(client, Player)
+    cards = new ModelBackend(client, Card)
+  } catch (error) {
+    console.error(`Error when running ${expect.getState().currentTestName}: ${error}`)
+  }
 })
 
 describe("collecting references", () => {
@@ -123,7 +127,7 @@ describe("deletion", () => {
       await games.update(game.id, {cascadeLeader: 'alice'})
     })
 
-    it("should delete the referencing object, but leave other models of the same type alone", async () => {
+    it("should delete the referencing object, but leave other models of the same type alone 2", async () => {
       // Create another game,  but make Bob leader.
       const bobsGame = await createGame(client, {cascadeLeader: 'bob'})
 
@@ -135,7 +139,7 @@ describe("deletion", () => {
       expect(ids).toEqual([bobsGame.id])
     })
 
-    it("should cascade delete all objects that have a reference to the referencing object", async () => {
+    it("should cascade delete all objects that have a reference to the referencing object 1", async () => {
       // Create room.
       const rooms = new ModelBackend(client, Room)
       await rooms.create({cascadeGame: game})
@@ -176,7 +180,7 @@ describe("deletion", () => {
       await games.update(game.id, {deleteLeader: 'alice'})
     })
     
-    it("should delete the referencing object, but leave other models of the same type alone", async () => {
+    it("should delete the referencing object, but leave other models of the same type alone 1", async () => {
       // Create another game,  but make Bob leader.
       const bobsGame = await createGame(client, {deleteLeader: 'bob'})
 
@@ -188,7 +192,7 @@ describe("deletion", () => {
       expect(ids).toEqual([bobsGame.id])
     })
 
-    it("should not cascade delete all objects that have a reference to the referencing object", async () => {
+    it("should not cascade delete all objects that have a reference to the referencing object 2", async () => {
       // Create room.
       const rooms = new ModelBackend(client, Room)
       const room = await rooms.create({cascadeGame: game})

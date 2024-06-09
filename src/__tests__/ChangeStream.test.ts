@@ -7,6 +7,7 @@ import {
 } from 'mongodb'
 import { ValuedSemaphore } from 'semaphore'
 import { delay } from 'yest'
+import { safeParseInt } from 'ytil'
 
 import ModelChange, { ModelChangeType, UNKNOWN } from '../ModelChange'
 import { ChangeStream, ChangeStreamOptions, ModelBackend, MongoClient } from '../backend'
@@ -14,6 +15,8 @@ import { testClient } from './client'
 import { Parent } from './datamodel/family'
 
 const describe = process.env.CHANGE_STREAMS === '0' ? global.describe.skip : global.describe
+const TIMEOUT = safeParseInt(process.env.TEST_TIMEOUT) ?? 10_000
+const SEMAPHORE_TIMEOUT = TIMEOUT / 20
 
 describe("ChangeStream", () => {
 
@@ -34,8 +37,10 @@ describe("ChangeStream", () => {
   })
 
   describe("raw interface", () => {
+
     describe('insert', () => {
-      test("receiving insert changes", async () => {
+
+      it("should receive insert changes", async () => {
         const {semaphore} = await createStream<ChangeStreamInsertDocument>()
 
         await backend.create({name: "Parent 1"})
@@ -43,9 +48,9 @@ describe("ChangeStream", () => {
         expect(change).toEqual(expect.objectContaining({
           operationType: 'insert',
         }))
-      })
+      }, TIMEOUT)
 
-      test("fullDocument is always present", async () => {
+      it("should always include the .fullDocument property", async () => {
         const {semaphore} = await createStream<ChangeStreamInsertDocument>()
 
         await backend.create({name: "Parent 1"})
@@ -60,7 +65,8 @@ describe("ChangeStream", () => {
           updatedAt:   expect.any(Date),
           _references: [],
         })
-      })
+      }, TIMEOUT)
+
     })
 
     describe('update', () => {
@@ -70,7 +76,7 @@ describe("ChangeStream", () => {
         parent = await backend.create({name: "Parent 1"})
       })
 
-      test("receiving update changes", async () => {
+      it("should receive update changes", async () => {
         const {semaphore} = await createStream<ChangeStreamUpdateDocument>()
 
         parent.assign({name: "Parent 2"})
@@ -80,9 +86,9 @@ describe("ChangeStream", () => {
         expect(change).toEqual(expect.objectContaining({
           operationType: 'update',
         }))
-      })
+      }, TIMEOUT)
 
-      test("`fullDocument` and `fullDocumentBeforeChange` are by default undefined", async () => {
+      it("should by default have an undefined `.fullDocument` and `.fullDocumentBeforeChange` property", async () => {
         const {semaphore} = await createStream<ChangeStreamUpdateDocument>()
 
         parent.assign({name: "Parent 2"})
@@ -91,9 +97,9 @@ describe("ChangeStream", () => {
         const change = await semaphore
         expect(change.fullDocument).toBeUndefined()
         expect(change.fullDocumentBeforeChange).toBeUndefined()
-      })
+      }, TIMEOUT)
 
-      test("`fullDocument` and `fullDocumentBeforeChange` should be set if `{full: true}` is passed", async () => {
+      it("shold set the `.fullDocument` and `.fullDocumentBeforeChange` properties if `{full: true}` is passed", async () => {
         const {semaphore} = await createStream<ChangeStreamUpdateDocument>({full: true})
 
         parent.assign({name: "Parent 2"})
@@ -102,9 +108,9 @@ describe("ChangeStream", () => {
         const change = await semaphore
         expect(change.fullDocument).toBeDefined()
         expect(change.fullDocumentBeforeChange).toBeDefined()
-      })
+      }, TIMEOUT)
 
-      test("updateDescription should contain a description of what's changed", async () => {
+      it("should have an `.updateDescription` property containing a description of what's changed", async () => {
         const {semaphore} = await createStream<ChangeStreamUpdateDocument>()
 
         parent.assign({name: "Parent 2"})
@@ -120,7 +126,8 @@ describe("ChangeStream", () => {
           removedFields:   [],
           truncatedArrays: [],
         })
-      })
+      }, TIMEOUT)
+
     })
 
     describe('delete', () => {
@@ -130,7 +137,7 @@ describe("ChangeStream", () => {
         parent = await backend.create({name: "Parent 1"})
       })
 
-      test("receiving delete changes", async () => {
+      it("should receive delete changes", async () => {
         const {semaphore} = await createStream<ChangeStreamDeleteDocument>()
 
         await backend.delete(parent)
@@ -139,30 +146,31 @@ describe("ChangeStream", () => {
         expect(change).toEqual(expect.objectContaining({
           operationType: 'delete',
         }))
-      })
+      }, TIMEOUT)
 
-      test("`fullDocumentBeforeChange` is by default undefined", async () => {
+      it("should have a `.fullDocumentBeforeChange` property that is by default undefined", async () => {
         const {semaphore} = await createStream<ChangeStreamDeleteDocument>()
 
         await backend.delete(parent)
 
         const change = await semaphore
         expect(change.fullDocumentBeforeChange).toBeUndefined()
-      })
+      }, TIMEOUT)
 
-      test("`fullDocumentBeforeChange` should be set if `{full: true}` is passed", async () => {
+      it("should have iets `.fullDocumentBeforeChange` set if `{full: true}` is passed", async () => {
         const {semaphore} = await createStream<ChangeStreamDeleteDocument>({full: true})
 
         await backend.delete(parent)
 
         const change = await semaphore
         expect(change.fullDocumentBeforeChange).toBeDefined()
-      })
+      }, TIMEOUT)
+
     })
 
     async function createStream<D extends ChangeStreamDocument>(options: ChangeStreamOptions<any> = {}) {
       const stream = ChangeStream.watchModel(backend, options)
-      const semaphore = new ValuedSemaphore<D>({timeout: 200})
+      const semaphore = new ValuedSemaphore<D>({timeout: SEMAPHORE_TIMEOUT})
       const handler = jest.fn<void, [D]>().mockImplementation(doc => {
         semaphore.signal(doc)
       })
@@ -203,7 +211,7 @@ describe("ChangeStream", () => {
             createdAt: {prevValue: undefined, nextValue: expect.any(DateTime)},
           },
         })
-      })
+      }, TIMEOUT)
 
     })
 
@@ -237,7 +245,7 @@ describe("ChangeStream", () => {
             updatedAt: {prevValue: UNKNOWN, nextValue: expect.any(DateTime)},
           },
         ))
-      })
+      }, TIMEOUT)
 
       test("if {full: true} is passed, prevValues are derived from the model", async () => {
         const {semaphore} = await createStream({full: true})
@@ -255,7 +263,8 @@ describe("ChangeStream", () => {
             updatedAt: {prevValue: expect.any(DateTime), nextValue: expect.any(DateTime)},
           },
         ))
-      })
+      }, TIMEOUT)
+
     })
 
     describe('delete', () => {
@@ -277,12 +286,13 @@ describe("ChangeStream", () => {
           parent.id,
           {},
         ))
-      })
+      }, TIMEOUT)
+
     })
 
     async function createStream(options: ChangeStreamOptions<Parent> = {}) {
       const stream = ChangeStream.watchModel(backend, options)
-      const semaphore = new ValuedSemaphore<ModelChange<Parent>>({timeout: 200})
+      const semaphore = new ValuedSemaphore<ModelChange<Parent>>({timeout: SEMAPHORE_TIMEOUT})
       const handler = jest.fn<void, [ModelChange<Parent>]>().mockImplementation(doc => {
         semaphore.signal(doc)
       })

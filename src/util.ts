@@ -9,7 +9,8 @@ export async function withClientStackTrace<T>(fn: () => PromiseLike<T> | T): Pro
     return await fn()
   }
 
-  const clientError = new Error()
+  const clientError: {stack?: string} = {}
+  Error.captureStackTrace(clientError, withClientStackTrace)
   try {
     return await fn()
   } catch (error: any) {
