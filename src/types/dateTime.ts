@@ -24,8 +24,8 @@ export const dateTime = defineType<DateTime, DateTimeOptions>('date', (options: 
   serialize: value => value,
 
   validate(value: any, result: ValidatorResult<any>) {
-    if (!(value instanceof DateTime) || !value.isValid) {
-      result.addError('invalid_type', 'Expected a date')
+    if (!DateTime.isDateTime(value) || !value.isValid) {
+      result.addError('invalid_type', 'Expected a value DateTime object')
       return
     }
 
