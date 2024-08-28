@@ -44,7 +44,13 @@ export interface ModelClass<M extends Model> extends Omit<typeof Model, 'new' | 
   prototype: M
 }
 
-export type IDOf<M extends Model> = ID
+export type IDOf<M extends Model> = M['id']
+export type AttributesOf<M extends Model> = OmitFunctions<Omit<M, keyof Model>>
+export type PartialAttributesOf<M extends Model> = Partial<AttributesOf<M>>
+
+type OmitFunctions<T> = {
+  [K in keyof T as T[K] extends Function ? never : K]: T[K]
+}
 
 /**
  * Allowed ID types. Any other type is ok, if there's a custom ID adapter for the model.
