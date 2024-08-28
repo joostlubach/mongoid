@@ -208,7 +208,9 @@ export default class ModelBackend<M extends Model> {
     if (model == null) { return null }
 
     model.assign(attributes)
-    await this.save(model, options)
+    if (model.isModified()) {
+      await this.save(model, options)
+    }
     return model
   }
 
