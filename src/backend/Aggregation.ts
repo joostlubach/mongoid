@@ -6,6 +6,7 @@ import {
   Collection,
   MongoClient,
 } from 'mongodb'
+import { wrapArray } from 'ytil'
 
 import Model from '../Model'
 import { AggregationPipeline, AggregationPipelineRaw } from '../aggregation'
@@ -93,9 +94,8 @@ export default class Aggregation<M extends Model> {
 
   private pluckCursor<K extends keyof M & string>(properties: K | K[]): mongodb_AggregationCursor<M[K] | {[property in K]: M[K]}> {
     const projection: Record<string, any> = {}
-    for (let property of properties) {
-      if (property === 'id') { property = '_id' }
-      projection[property] = 1
+    for (let property of wrapArray(properties)) {
+      projection[property === 'id' ? '_id' : property] = 1
     }
 
     const cursor = this.raw().project(projection)
@@ -113,7 +113,7 @@ export default class Aggregation<M extends Model> {
       if (isArray(properties)) {
         return properties.reduce((result, prop) => ({...result, [prop]: get(prop)}), {})
       } else {
-        return get(properties[0])
+        return get(properties)
       }
     })
   }
