@@ -254,8 +254,8 @@ export default class ModelBackend<M extends Model> {
     await model.ensureID()
 
     const now = DateTime.local()
-    model.createdAt = now
-    model.updatedAt = now
+    model.created_at = now
+    model.updated_at = now
 
     const document = await this.buildInsertionDocument(model)
     await this.collection.insertOne(document, {
@@ -266,7 +266,7 @@ export default class ModelBackend<M extends Model> {
   private async updateModel(model: M) {
     const filter = {_id: model.mongoID} as Filter<any>
 
-    model.updatedAt = DateTime.local()
+    model.updated_at = DateTime.local()
 
     const update = await this.buildUpdate(model)
     if (update == null) { return }

@@ -14,7 +14,7 @@ export interface Config<I extends ID> {
   /** An ID adapter used to convert a custom ID type from and to mongo */
   idAdapter?: IDAdapter<I>
 
-  /** Whether to manage timestamp fields `createdAt` and `updatedAt`. */
+  /** Whether to manage timestamp fields `created_at` and `updated_at`. */
   timestamps: boolean
 
   /** Whether ModelRetainer enables caching by default. Turn off for unit testing. */

@@ -146,8 +146,8 @@ export default class Meta<M extends Model> {
 
     // Add timestamps.
     if (includeVirtual) {
-      attributes.createdAt = model.createdAt
-      attributes.updatedAt = model.updatedAt
+      attributes.created_at = model.created_at
+      attributes.updated_at = model.updated_at
     }
 
     // Add all other attributes. Coerce to `null` if necessary.

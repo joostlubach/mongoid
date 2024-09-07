@@ -24,8 +24,8 @@ describe("create", () => {
       age:         null,
       job:         null,
       children:    [],
-      createdAt:   expect.any(Date),
-      updatedAt:   expect.any(Date),
+      created_at:  expect.any(Date),
+      updated_at:  expect.any(Date),
       _references: [],
     })
   })
@@ -33,12 +33,12 @@ describe("create", () => {
   it("should return the created model and populate some default properties", async () => {
     const parent = await backend.create({name: "Parent 1"})
     expect(parent).toEqual(expect.objectContaining({
-      id:        expect.anything(),
-      name:      "Parent 1",
-      age:       null,
-      children:  [],
-      createdAt: expect.any(DateTime),
-      updatedAt: expect.any(DateTime),
+      id:         expect.anything(),
+      name:       "Parent 1",
+      age:        null,
+      children:   [],
+      created_at: expect.any(DateTime),
+      updated_at: expect.any(DateTime),
     }))
   })
 
@@ -56,8 +56,8 @@ describe("ensure", () => {
       age:         null,
       job:         null,
       children:    [],
-      createdAt:   expect.any(Date),
-      updatedAt:   expect.any(Date),
+      created_at:  expect.any(Date),
+      updated_at:  expect.any(Date),
       _references: [],
     })
   })
@@ -65,13 +65,13 @@ describe("ensure", () => {
   it("should return the created model and populate some default properties", async () => {
     const parent = await backend.ensure({name: "Parent 1"})
     expect(parent).toEqual(expect.objectContaining({
-      id:        expect.anything(),
-      name:      "Parent 1",
-      age:       null,
-      job:       null,
-      children:  [],
-      createdAt: expect.any(DateTime),
-      updatedAt: expect.any(DateTime),
+      id:         expect.anything(),
+      name:       "Parent 1",
+      age:        null,
+      job:        null,
+      children:   [],
+      created_at: expect.any(DateTime),
+      updated_at: expect.any(DateTime),
     }))
   })
 

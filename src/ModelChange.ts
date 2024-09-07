@@ -103,7 +103,7 @@ export default class ModelChange<M extends Model> {
 
     const validator = new Validator()
     const coerce = (attribute: string, value: any) => {
-      if (attribute === 'updatedAt' || attribute === 'createdAt') {
+      if (attribute === 'updated_at' || attribute === 'created_at') {
         return value instanceof DateTime ? value : DateTime.fromJSDate(value)
       }
 

@@ -61,8 +61,8 @@ describe("ChangeStream", () => {
           age:         null,
           job:         null,
           children:    [],
-          createdAt:   expect.any(Date),
-          updatedAt:   expect.any(Date),
+          created_at:  expect.any(Date),
+          updated_at:  expect.any(Date),
           _references: [],
         })
       }, TIMEOUT)
@@ -119,8 +119,8 @@ describe("ChangeStream", () => {
         const change = await semaphore
         expect(change.updateDescription).toEqual({
           updatedFields: {
-            name:      "Parent 2",
-            updatedAt: expect.any(Date),
+            name:       "Parent 2",
+            updated_at: expect.any(Date),
           },
 
           removedFields:   [],
@@ -207,8 +207,8 @@ describe("ChangeStream", () => {
             job:      {prevValue: undefined, nextValue: null},
             children: {prevValue: undefined, nextValue: []},
 
-            updatedAt: {prevValue: undefined, nextValue: expect.any(DateTime)},
-            createdAt: {prevValue: undefined, nextValue: expect.any(DateTime)},
+            updated_at: {prevValue: undefined, nextValue: expect.any(DateTime)},
+            created_at: {prevValue: undefined, nextValue: expect.any(DateTime)},
           },
         })
       }, TIMEOUT)
@@ -241,8 +241,8 @@ describe("ChangeStream", () => {
           Parent,
           parent.id,
           {
-            name:      {prevValue: UNKNOWN, nextValue: "Parent 2"},
-            updatedAt: {prevValue: UNKNOWN, nextValue: expect.any(DateTime)},
+            name:       {prevValue: UNKNOWN, nextValue: "Parent 2"},
+            updated_at: {prevValue: UNKNOWN, nextValue: expect.any(DateTime)},
           },
         ))
       }, TIMEOUT)
@@ -259,8 +259,8 @@ describe("ChangeStream", () => {
           Parent,
           parent.id,
           {
-            name:      {prevValue: "Parent 1", nextValue: "Parent 2"},
-            updatedAt: {prevValue: expect.any(DateTime), nextValue: expect.any(DateTime)},
+            name:       {prevValue: "Parent 1", nextValue: "Parent 2"},
+            updated_at: {prevValue: expect.any(DateTime), nextValue: expect.any(DateTime)},
           },
         ))
       }, TIMEOUT)

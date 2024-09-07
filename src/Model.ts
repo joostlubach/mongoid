@@ -27,8 +27,8 @@ export default class Model {
 
   public originals: Record<string, any> = {}
 
-  public createdAt: DateTime | null = null
-  public updatedAt: DateTime | null = null
+  public created_at: DateTime | null = null
+  public updated_at: DateTime | null = null
 
   /**
    * Whether this model has not yet been saved to the database.
@@ -176,12 +176,12 @@ export default class Model {
     if (virtual) {
       if (target === SerializeTarget.MongoDB) {
         serialized._id = this.mongoID
-        serialized.createdAt = this.createdAt?.toJSDate() ?? null
-        serialized.updatedAt = this.updatedAt?.toJSDate() ?? null
+        serialized.created_at = this.created_at?.toJSDate() ?? null
+        serialized.updated_at = this.updated_at?.toJSDate() ?? null
       } else {
         serialized.id = this.id
-        serialized.createdAt = this.createdAt
-        serialized.updatedAt = this.updatedAt
+        serialized.created_at = this.created_at
+        serialized.updated_at = this.updated_at
       }
     } else {
       // Delete all virtual attributes.
@@ -204,7 +204,7 @@ export default class Model {
    * @param attributes The attributes to hydrate with.
    */
   public async deserialize(raw: Document, partial: boolean = false) {
-    const {_id: id, updatedAt, createdAt, ...rest} = raw
+    const {_id: id, updated_at, created_at, ...rest} = raw
 
     const coerced = this.coerce(rest, partial)
     if (objectKeys(coerced).length === 0) { return }
@@ -213,8 +213,8 @@ export default class Model {
 
     this.originals = cloneDeep(this.attributes as Partial<this>)
     if (id != null) { this.id = id }
-    this.updatedAt = updatedAt instanceof Date ? DateTime.fromJSDate(updatedAt) : updatedAt
-    this.createdAt = createdAt instanceof Date ? DateTime.fromJSDate(createdAt) : createdAt
+    this.updated_at = updated_at instanceof Date ? DateTime.fromJSDate(updated_at) : updated_at
+    this.created_at = created_at instanceof Date ? DateTime.fromJSDate(created_at) : created_at
     this.markPersisted()
   }
 
