@@ -63,5 +63,5 @@
     "typescript": "5.4.3",
     "uuid": "^9.0.1"
   },
-  "packageManager": "pnpm@8.4.0"
+  "packageManager": "pnpm@9.9.0"
 }
